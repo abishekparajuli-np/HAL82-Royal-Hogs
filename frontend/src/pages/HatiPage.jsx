@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { HatiProvider, useHati } from '../context/HatiContext';
 import HatiMap from '../components/hati/HatiMap';
 import HatiChat from '../components/hati/HatiChat';
@@ -9,101 +8,27 @@ function HatiLayout() {
     return (
         <div style={{
             display: 'flex', flexDirection: 'column', height: '100vh',
-            background: '#1A0A00', color: '#F5ECD7',
+            background: '#F9F3E8', color: '#2A1608',
             fontFamily: "'Crimson Pro', Georgia, serif",
             overflow: 'hidden',
         }}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;500;600&family=Tiro+Devanagari+Sanskrit&display=swap');
                 * { box-sizing: border-box; margin: 0; padding: 0; }
-                .hati-tab:hover { color: #C8972B !important; }
-                .reset-btn:hover { background: rgba(139,26,26,0.3) !important; color: #f5a5a5 !important; }
+                .hati-tab:hover { color: #9B2335 !important; }
+                .reset-btn:hover {
+                    background: rgba(155,35,53,0.08) !important;
+                    border-color: rgba(155,35,53,0.5) !important;
+                    color: #7D1C2B !important;
+                }
             `}</style>
 
-            {/* Header */}
-            <header style={{
-                padding: '10px 20px',
-                background: 'rgba(26,10,0,0.95)',
-                borderBottom: '1px solid rgba(200,151,43,0.25)',
-                backgroundImage: 'linear-gradient(90deg, rgba(139,26,26,0.1) 0%, rgba(200,151,43,0.05) 50%, rgba(139,26,26,0.1) 100%)',
-                display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0, flexWrap: 'wrap',
-                boxShadow: '0 2px 20px rgba(0,0,0,0.4)',
-            }}>
 
-                {/* Brand */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                        width: 36, height: 36, borderRadius: 3,
-                        background: 'rgba(139,26,26,0.4)',
-                        border: '1px solid rgba(200,151,43,0.35)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 18,
-                    }}>🐘</div>
-                    <div>
-                        <div style={{
-                            fontFamily: "'Tiro Devanagari Sanskrit', serif",
-                            fontSize: 17, color: '#C8972B', letterSpacing: '0.1em', lineHeight: 1.2,
-                        }}>HATI</div>
-                        <div style={{
-                            fontSize: 9, color: 'rgba(245,236,215,0.35)',
-                            letterSpacing: '0.18em', textTransform: 'uppercase',
-                        }}>Himalayan Adaptive Travel Intelligence</div>
-                    </div>
-                </div>
-
-                {/* Divider */}
-                <div style={{ width: 1, height: 28, background: 'rgba(200,151,43,0.15)', flexShrink: 0 }}></div>
-
-                {/* Nepal badge */}
-                <div style={{
-                    padding: '4px 10px', borderRadius: 2, fontSize: 10,
-                    background: 'rgba(139,26,26,0.15)',
-                    border: '1px solid rgba(200,151,43,0.25)',
-                    color: '#C8972B', letterSpacing: '0.12em', textTransform: 'uppercase',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                }}>
-                    <span>🇳🇵</span> Nepal Guide
-                </div>
-
-                {/* Spacer */}
-                <div style={{ flex: 1 }}></div>
-
-                {/* Weather */}
-                {weather && weather.temp !== undefined && (
-                    <div style={{
-                        padding: '5px 12px', borderRadius: 2, fontSize: 10.5,
-                        background: 'rgba(74,44,10,0.35)',
-                        border: '1px solid rgba(200,151,43,0.2)',
-                        color: 'rgba(245,236,215,0.7)',
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        letterSpacing: '0.05em',
-                    }}>
-                        <span>{weather.icon || '🌤️'}</span>
-                        <span style={{ color: '#C8972B', fontWeight: 600 }}>{weather.temp}°C</span>
-                        <span style={{ color: 'rgba(245,236,215,0.4)', fontSize: 9 }}>·</span>
-                        <span style={{ textTransform: 'capitalize', fontSize: 10 }}>{weather.description}</span>
-                    </div>
-                )}
-
-                {/* Reset */}
-                <button className="reset-btn" onClick={reset} style={{
-                    padding: '5px 12px', borderRadius: 2, fontSize: 10,
-                    background: 'rgba(139,26,26,0.1)',
-                    border: '1px solid rgba(139,26,26,0.35)',
-                    color: '#e07070', cursor: 'pointer',
-                    fontFamily: 'inherit', letterSpacing: '0.1em',
-                    textTransform: 'uppercase', transition: 'all 0.2s',
-                    display: 'flex', alignItems: 'center', gap: 5,
-                }}>
-                    <span>↺</span> Reset
-                </button>
-            </header>
-
-            {/* Tab Bar */}
+            {/* ── Tab Bar ── */}
             <div style={{
                 display: 'flex',
-                background: 'rgba(15,5,0,0.6)',
-                borderBottom: '1px solid rgba(200,151,43,0.2)',
+                background: '#FAF4E8',
+                borderBottom: '1px solid rgba(184,137,42,0.18)',
                 flexShrink: 0, padding: '0 4px',
             }}>
                 {[
@@ -119,10 +44,10 @@ function HatiLayout() {
                             textAlign: 'center', cursor: 'pointer',
                             transition: 'all 0.2s',
                             borderBottom: activeTab === id
-                                ? '2px solid #C8972B'
+                                ? '2px solid #9B2335'
                                 : '2px solid transparent',
                             background: activeTab === id
-                                ? 'rgba(200,151,43,0.05)'
+                                ? 'rgba(155,35,53,0.04)'
                                 : 'transparent',
                             display: 'flex', alignItems: 'center',
                             justifyContent: 'center', gap: 7,
@@ -130,45 +55,57 @@ function HatiLayout() {
                     >
                         <span style={{ fontSize: 13 }}>{icon}</span>
                         <span style={{
-                            fontSize: 11, fontWeight: 500,
+                            fontSize: 11, fontWeight: 600,
                             letterSpacing: '0.1em', textTransform: 'uppercase',
-                            color: activeTab === id
-                                ? '#C8972B'
-                                : 'rgba(245,236,215,0.3)',
+                            color: activeTab === id ? '#9B2335' : 'rgba(61,32,16,0.35)',
                         }}>{label}</span>
                     </div>
                 ))}
             </div>
 
-            {/* Status bar */}
+            {/* ── Status bar ── */}
             <div style={{
                 padding: '4px 20px',
-                background: 'rgba(10,3,0,0.5)',
-                borderBottom: '1px solid rgba(200,151,43,0.08)',
+                background: '#F5EDD8',
+                borderBottom: '1px solid rgba(184,137,42,0.12)',
                 display: 'flex', alignItems: 'center', gap: 16,
                 flexShrink: 0,
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <div style={{
                         width: 6, height: 6, borderRadius: '50%',
-                        background: '#10b981',
-                        boxShadow: '0 0 6px rgba(16,185,129,0.6)',
-                    }}></div>
-                    <span style={{ fontSize: 9, color: 'rgba(245,236,215,0.25)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                        background: '#16a34a',
+                        boxShadow: '0 0 6px rgba(22,163,74,0.5)',
+                    }} />
+                    <span style={{
+                        fontSize: 9, color: 'rgba(61,32,16,0.45)',
+                        letterSpacing: '0.15em', textTransform: 'uppercase',
+                    }}>
                         HATI Online
                     </span>
                 </div>
-                <div style={{ width: 1, height: 10, background: 'rgba(200,151,43,0.1)' }}></div>
-                <span style={{ fontSize: 9, color: 'rgba(245,236,215,0.15)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                    ❈ Powered by Himalayan AI
+                <div style={{ width: 1, height: 10, background: 'rgba(184,137,42,0.2)' }} />
+                <span style={{
+                    fontSize: 9, color: 'rgba(61,32,16,0.3)',
+                    letterSpacing: '0.12em', textTransform: 'uppercase',
+                }}>
+                    ❈ Powered by HATI
                 </span>
             </div>
 
-            {/* Panels */}
-            <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'map' ? 'flex' : 'none', flexDirection: 'column' }}>
+            {/* ── Panels ── */}
+            <div style={{
+                flex: 1, overflow: 'hidden',
+                display: activeTab === 'map' ? 'flex' : 'none',
+                flexDirection: 'column',
+            }}>
                 <HatiMap />
             </div>
-            <div style={{ flex: 1, overflow: 'hidden', display: activeTab === 'chat' ? 'flex' : 'none', flexDirection: 'column' }}>
+            <div style={{
+                flex: 1, overflow: 'hidden',
+                display: activeTab === 'chat' ? 'flex' : 'none',
+                flexDirection: 'column',
+            }}>
                 <HatiChat />
             </div>
         </div>

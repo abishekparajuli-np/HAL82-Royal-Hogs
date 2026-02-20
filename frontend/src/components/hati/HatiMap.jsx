@@ -90,7 +90,7 @@ export default function HatiMap() {
 
     const getRoute = useCallback(async () => {
         if (!originInput.trim() || !destInput.trim()) { setErr('Enter both origin and destination.'); return; }
-        setErr(''); setHint('Searching...');
+        setErr(''); setHint('Searching…');
         if (simRef.current) { clearInterval(simRef.current); simRef.current = null; }
         setSimRunning(false); setArrived(false); setShowSimBar(false); setSimPct(0);
 
@@ -111,7 +111,7 @@ export default function HatiMap() {
         }).addTo(map).bindPopup(`To: ${d.name}`).openPopup();
 
         markersRef.current.line = L.polyline([[o.lat, o.lon], [d.lat, d.lon]], {
-            color: '#C8972B', weight: 2, dashArray: '8 5', opacity: 0.6
+            color: '#9B2335', weight: 2.5, dashArray: '8 5', opacity: 0.7
         }).addTo(map);
 
         map.fitBounds([[o.lat, o.lon], [d.lat, d.lon]], { padding: [55, 55] });
@@ -141,7 +141,7 @@ export default function HatiMap() {
             setSimPct(pct);
 
             const simIcon = L.divIcon({
-                html: '<div style="width:13px;height:13px;background:#C8972B;border:2px solid #F5ECD7;border-radius:50%;box-shadow:0 0 10px rgba(200,151,43,0.8)"></div>',
+                html: '<div style="width:13px;height:13px;background:#9B2335;border:2.5px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(155,35,53,0.7)"></div>',
                 iconSize: [13, 13], iconAnchor: [6, 6], className: ''
             });
 
@@ -179,50 +179,68 @@ export default function HatiMap() {
         if (leafletMap.current) leafletMap.current.map.setView([27.7172, 85.3240], 12);
     }, [stopSimulation, clearMarkers, setOrigin, setDest]);
 
+    /* ── shared input style ── */
     const inp = {
         flex: 1, padding: '10px 14px',
-        background: 'rgba(245,236,215,0.04)',
-        border: '1px solid rgba(200,151,43,0.18)',
-        borderRadius: 2, color: '#F5ECD7', fontSize: 13,
+        background: 'transparent',
+        border: 'none',
+        borderRadius: 0, color: '#2A1608', fontSize: 13,
         fontFamily: "'Crimson Pro', Georgia, serif",
         outline: 'none', letterSpacing: '0.02em',
     };
 
-    const actionBtn = (bg, border, color) => ({
-        flex: 1, padding: '9px 12px', borderRadius: 2,
-        border: `1px solid ${border}`, background: bg, color,
-        fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
-        letterSpacing: '0.1em', textTransform: 'uppercase',
-        fontWeight: 500, transition: 'all .2s', whiteSpace: 'nowrap',
-    });
+    /* ── action button factory ── */
+    const actionBtn = (variant) => {
+        const map = {
+            simulate: {
+                bg: 'transparent', border: 'rgba(155,35,53,0.3)', color: '#9B2335',
+            },
+            stop: {
+                bg: 'rgba(155,35,53,0.08)', border: 'rgba(155,35,53,0.4)', color: '#7D1C2B',
+            },
+            here: {
+                bg: 'transparent', border: 'rgba(184,137,42,0.3)', color: '#6B3D1E',
+            },
+            reset: {
+                bg: 'transparent', border: 'rgba(155,35,53,0.25)', color: '#9B2335',
+            },
+        };
+        const v = map[variant] || map.simulate;
+        return {
+            flex: 1, padding: '9px 12px', borderRadius: 8,
+            border: `1.5px solid ${v.border}`, background: v.bg, color: v.color,
+            fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontWeight: 600, transition: 'all .2s', whiteSpace: 'nowrap',
+        };
+    };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: '#F9F3E8' }}>
             <style>{`
-                .hati-inp:focus { border-color: rgba(200,151,43,0.55) !important; background: rgba(245,236,215,0.06) !important; }
-                .hati-inp::placeholder { color: rgba(245,236,215,0.18); font-style: italic; }
-                .find-btn:hover { background: #C8972B !important; }
-                .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+                .hati-inp:focus { border-color: rgba(184,137,42,0.5) !important; }
+                .hati-inp::placeholder { color: rgba(61,32,16,0.3); font-style: italic; }
+                .find-btn:hover  { background: #7D1C2B !important; box-shadow: 0 4px 14px rgba(155,35,53,0.35) !important; }
+                .action-btn:hover { opacity: 0.8; transform: translateY(-1px); }
             `}</style>
 
             {/* ── Controls Panel ── */}
             <div style={{
                 padding: '16px 18px',
                 flexShrink: 0,
-                background: 'rgba(26,10,0,0.75)',
-                borderBottom: '1px solid rgba(200,151,43,0.2)',
+                background: '#FFFFFF',
+                borderBottom: '1px solid rgba(184,137,42,0.18)',
+                boxShadow: '0 1px 8px rgba(61,32,16,0.06)',
             }}>
 
                 {/* Section label */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14,
-                }}>
-                    <div style={{ height: 1, flex: 1, background: 'rgba(200,151,43,0.12)' }}></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    <div style={{ height: 1, flex: 1, background: 'rgba(184,137,42,0.18)' }} />
                     <span style={{
-                        fontSize: 9, color: 'rgba(200,151,43,0.35)',
-                        textTransform: 'uppercase', letterSpacing: '0.2em',
+                        fontSize: 9, color: '#9C6840',
+                        textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 600,
                     }}>Route Planner</span>
-                    <div style={{ height: 1, flex: 1, background: 'rgba(200,151,43,0.12)' }}></div>
+                    <div style={{ height: 1, flex: 1, background: 'rgba(184,137,42,0.18)' }} />
                 </div>
 
                 {/* Input grid */}
@@ -232,20 +250,19 @@ export default function HatiMap() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{
                             minWidth: 52, textAlign: 'right',
-                            fontSize: 9, color: 'rgba(200,151,43,0.45)',
-                            textTransform: 'uppercase', letterSpacing: '0.15em',
-                            paddingTop: 2,
+                            fontSize: 9, color: '#9C6840',
+                            textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600,
                         }}>Origin</div>
                         <div style={{
                             flex: 1, display: 'flex', alignItems: 'center',
-                            border: '1px solid rgba(200,151,43,0.18)',
-                            borderRadius: 2, background: 'rgba(245,236,215,0.04)',
-                            overflow: 'hidden',
+                            border: '1.5px solid rgba(184,137,42,0.22)',
+                            borderRadius: 8, background: '#F9F3E8', overflow: 'hidden',
+                            transition: 'border-color 0.2s',
                         }}>
-                            <span style={{ padding: '0 10px', fontSize: 13, opacity: 0.5 }}>🟢</span>
+                            <span style={{ padding: '0 10px', fontSize: 13 }}>🟢</span>
                             <input
                                 className="hati-inp"
-                                style={{ ...inp, border: 'none', flex: 1, background: 'transparent', padding: '10px 10px 10px 0' }}
+                                style={inp}
                                 value={originInput}
                                 onChange={e => setOriginInput(e.target.value)}
                                 placeholder="e.g. Thamel, Kathmandu"
@@ -254,12 +271,11 @@ export default function HatiMap() {
                         </div>
                     </div>
 
-                    {/* Connector dot */}
+                    {/* Connector */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ minWidth: 52 }}></div>
-                        <div style={{ paddingLeft: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <div style={{ width: 1, height: 10, background: 'rgba(200,151,43,0.2)' }}></div>
-                            <span style={{ fontSize: 8, color: 'rgba(200,151,43,0.2)', letterSpacing: '0.1em' }}>│</span>
+                        <div style={{ minWidth: 52 }} />
+                        <div style={{ paddingLeft: 14, display: 'flex', alignItems: 'center' }}>
+                            <div style={{ width: 1, height: 12, background: 'rgba(184,137,42,0.3)' }} />
                         </div>
                     </div>
 
@@ -267,81 +283,75 @@ export default function HatiMap() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{
                             minWidth: 52, textAlign: 'right',
-                            fontSize: 9, color: 'rgba(200,151,43,0.45)',
-                            textTransform: 'uppercase', letterSpacing: '0.15em',
-                            paddingTop: 2,
+                            fontSize: 9, color: '#9C6840',
+                            textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600,
                         }}>Dest</div>
                         <div style={{
                             flex: 1, display: 'flex', alignItems: 'center',
-                            border: '1px solid rgba(200,151,43,0.18)',
-                            borderRadius: 2, background: 'rgba(245,236,215,0.04)',
-                            overflow: 'hidden',
+                            border: '1.5px solid rgba(184,137,42,0.22)',
+                            borderRadius: 8, background: '#F9F3E8', overflow: 'hidden',
                         }}>
-                            <span style={{ padding: '0 10px', fontSize: 13, opacity: 0.5 }}>📍</span>
+                            <span style={{ padding: '0 10px', fontSize: 13 }}>📍</span>
                             <input
                                 className="hati-inp"
-                                style={{ ...inp, border: 'none', flex: 1, background: 'transparent', padding: '10px 10px 10px 0' }}
+                                style={inp}
                                 value={destInput}
                                 onChange={e => setDestInput(e.target.value)}
                                 placeholder="e.g. Boudhanath Stupa"
                                 onKeyDown={e => e.key === 'Enter' && getRoute()}
                             />
                         </div>
-                        <button className="find-btn" onClick={getRoute} style={{
-                            padding: '10px 20px', borderRadius: 2,
-                            border: '1px solid rgba(200,151,43,0.3)',
-                            background: '#8B1A1A', color: '#F5ECD7',
-                            fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
-                            letterSpacing: '0.12em', textTransform: 'uppercase',
-                            fontWeight: 600, transition: 'background .2s', whiteSpace: 'nowrap',
-                        }}>Find Route</button>
+
+                        <button
+                            className="find-btn"
+                            onClick={getRoute}
+                            style={{
+                                padding: '10px 20px', borderRadius: 8,
+                                border: 'none',
+                                background: '#9B2335', color: '#FFFFFF',
+                                fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                                letterSpacing: '0.1em', textTransform: 'uppercase',
+                                fontWeight: 700, transition: 'all .2s', whiteSpace: 'nowrap',
+                                boxShadow: '0 2px 10px rgba(155,35,53,0.25)',
+                            }}
+                        >Find Route</button>
                     </div>
                 </div>
 
                 {/* Divider */}
-                <div style={{ height: 1, background: 'rgba(200,151,43,0.08)', margin: '12px 0' }}></div>
+                <div style={{ height: 1, background: 'rgba(184,137,42,0.12)', margin: '12px 0' }} />
 
                 {/* Action buttons */}
                 <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="action-btn" onClick={simRunning ? stopSimulation : startSimulation}
-                        style={actionBtn(
-                            simRunning ? 'rgba(139,26,26,0.15)' : 'rgba(200,151,43,0.07)',
-                            simRunning ? 'rgba(139,26,26,0.4)' : 'rgba(200,151,43,0.25)',
-                            simRunning ? '#e07070' : 'rgba(200,151,43,0.75)',
-                        )}>
-                        {simRunning ? '⏹ Stop Simulation' : '▶ Simulate Journey'}
+                    <button
+                        className="action-btn"
+                        onClick={simRunning ? stopSimulation : startSimulation}
+                        style={actionBtn(simRunning ? 'stop' : 'simulate')}
+                    >
+                        {simRunning ? '⏹ Stop' : '▶ Simulate Journey'}
                     </button>
-                    <button className="action-btn" onClick={manualArrival}
-                        style={actionBtn(
-                            'rgba(74,44,10,0.3)',
-                            'rgba(200,151,43,0.2)',
-                            'rgba(245,236,215,0.5)',
-                        )}>
+                    <button className="action-btn" onClick={manualArrival} style={actionBtn('here')}>
                         🎯 I Am Here
                     </button>
-                    <button className="action-btn" onClick={resetAll}
-                        style={actionBtn(
-                            'rgba(139,26,26,0.1)',
-                            'rgba(139,26,26,0.3)',
-                            '#e07070',
-                        )}>
+                    <button className="action-btn" onClick={resetAll} style={actionBtn('reset')}>
                         ↺ Reset
                     </button>
                 </div>
 
-                {/* Hint / Error */}
+                {/* Hint */}
                 {!err && hint && (
                     <div style={{
                         marginTop: 10, fontSize: 10,
-                        color: 'rgba(200,151,43,0.35)',
-                        textAlign: 'center', letterSpacing: '0.08em',
-                        fontStyle: 'italic',
+                        color: 'rgba(61,32,16,0.38)',
+                        textAlign: 'center', letterSpacing: '0.08em', fontStyle: 'italic',
                     }}>❈ {hint}</div>
                 )}
+
+                {/* Error */}
                 {err && (
                     <div style={{
-                        marginTop: 10, fontSize: 10.5, color: '#e07070',
-                        textAlign: 'center', letterSpacing: '0.06em',
+                        marginTop: 10, fontSize: 11, color: '#9B2335',
+                        textAlign: 'center', letterSpacing: '0.05em', fontWeight: 600,
                     }}>⚠ {err}</div>
                 )}
             </div>
@@ -352,27 +362,28 @@ export default function HatiMap() {
             {/* ── Route cards ── */}
             <RouteCards options={routeOptions} />
 
-            {/* ── Simulation progress ── */}
+            {/* ── Simulation progress bar ── */}
             {showSimBar && (
                 <div style={{
                     padding: '10px 18px', flexShrink: 0,
-                    background: 'rgba(26,10,0,0.5)',
-                    borderBottom: '1px solid rgba(200,151,43,0.15)',
+                    background: '#FFFFFF',
+                    borderBottom: '1px solid rgba(184,137,42,0.15)',
                 }}>
                     <div style={{
                         display: 'flex', justifyContent: 'space-between',
-                        fontSize: 10, color: 'rgba(200,151,43,0.45)',
+                        fontSize: 10, color: '#9C6840',
                         letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
+                        fontWeight: 600,
                     }}>
                         <span>{origin?.name?.split(',')[0]}</span>
-                        <span style={{ color: '#C8972B', fontWeight: 600 }}>{simPct}%</span>
+                        <span style={{ color: '#9B2335' }}>{simPct}%</span>
                         <span>{dest?.name?.split(',')[0]}</span>
                     </div>
-                    <div style={{ height: 3, background: 'rgba(245,236,215,0.06)', borderRadius: 1, overflow: 'hidden' }}>
+                    <div style={{ height: 4, background: 'rgba(184,137,42,0.12)', borderRadius: 2, overflow: 'hidden' }}>
                         <div style={{
                             height: '100%', width: `${simPct}%`,
-                            background: 'linear-gradient(90deg, #8B1A1A, #C8972B)',
-                            borderRadius: 1, transition: 'width .5s linear',
+                            background: 'linear-gradient(90deg, #9B2335, #B8892A)',
+                            borderRadius: 2, transition: 'width .5s linear',
                         }} />
                     </div>
                 </div>
@@ -381,11 +392,11 @@ export default function HatiMap() {
             {/* ── Arrived banner ── */}
             {arrived && (
                 <div style={{
-                    margin: '10px 18px', padding: '11px 16px', borderRadius: 2,
-                    background: 'rgba(74,44,10,0.35)',
-                    border: '1px solid rgba(200,151,43,0.3)',
-                    color: '#C8972B', fontSize: 12, textAlign: 'center',
-                    letterSpacing: '0.06em', fontFamily: "'Crimson Pro', serif",
+                    margin: '10px 18px', padding: '11px 16px', borderRadius: 10,
+                    background: '#F0FAF3',
+                    border: '1px solid rgba(45,122,79,0.25)',
+                    color: '#1C5934', fontSize: 12.5, textAlign: 'center',
+                    letterSpacing: '0.04em', fontFamily: "'Crimson Pro', serif",
                 }}>
                     ❈ Arrived at <strong>{dest?.name?.split(',')[0]}</strong> — Switched to destination guide →
                 </div>
@@ -397,21 +408,21 @@ export default function HatiMap() {
             {/* ── Legend footer ── */}
             <div style={{
                 padding: '8px 18px', flexShrink: 0,
-                background: 'rgba(26,10,0,0.75)',
-                borderTop: '1px solid rgba(200,151,43,0.12)',
+                background: '#FFFFFF',
+                borderTop: '1px solid rgba(184,137,42,0.15)',
                 display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
             }}>
-                {[['🟢', 'Origin'], ['📍', 'Destination'], ['🟡', 'Route']].map(([icon, label]) => (
+                {[['🟢', 'Origin'], ['📍', 'Destination'], ['—', 'Route']].map(([icon, label]) => (
                     <span key={label} style={{
-                        fontSize: 9.5, color: 'rgba(245,236,215,0.2)',
+                        fontSize: 9.5, color: 'rgba(61,32,16,0.38)',
                         display: 'flex', alignItems: 'center', gap: 5,
-                        textTransform: 'uppercase', letterSpacing: '0.12em',
+                        textTransform: 'uppercase', letterSpacing: '0.1em',
                     }}>{icon} {label}</span>
                 ))}
                 {distLabel && (
                     <span style={{
                         marginLeft: 'auto', fontSize: 10,
-                        color: 'rgba(200,151,43,0.5)',
+                        color: '#9B2335', fontWeight: 600,
                         letterSpacing: '0.1em', textTransform: 'uppercase',
                     }}>❈ {distLabel}</span>
                 )}

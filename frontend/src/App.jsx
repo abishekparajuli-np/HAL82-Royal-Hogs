@@ -18,8 +18,14 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <HatiProvider>
-          <div className="min-h-screen bg-[#1A0A00] text-[#F5ECD7] font-serif selection:bg-[#C8972B]/30 flex flex-col">
 
+          <div
+            className="min-h-screen flex flex-col font-serif"
+            style={{
+              backgroundColor: "#F9F3E8",
+              color: "#2A1608",
+            }}
+          >
             <Navbar />
 
             <main className="flex-1">
@@ -32,13 +38,24 @@ export default function App() {
               </Routes>
             </main>
 
-            <footer className="border-t border-[#C8972B]/10 py-4 text-center">
-              <p className="text-[#F5ECD7]/20 text-xs uppercase tracking-widest">
-                &copy; {new Date().getFullYear()} HATI · All rights reserved.
+            {/* Footer */}
+            <footer
+              style={{
+                backgroundColor: "#F0E6D0",
+                borderTop: "1px solid rgba(184,137,42,0.2)",
+              }}
+              className="py-6 text-center"
+            >
+              <p
+                className="text-xs uppercase tracking-widest"
+                style={{ color: "rgba(61,32,16,0.4)" }}
+              >
+                &copy; {new Date().getFullYear()} HATI &middot; All rights reserved.
               </p>
             </footer>
 
           </div>
+
         </HatiProvider>
       </AuthProvider>
     </BrowserRouter>

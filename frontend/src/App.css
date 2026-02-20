@@ -1,92 +1,236 @@
-@import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=Crimson+Pro:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {
-  --nepali-red: #8B1A1A;
-  --nepali-gold: #C8972B;
-  --nepali-saffron: #E8A020;
-  --nepali-cream: #F5ECD7;
-  --nepali-brown: #4A2C0A;
-  --nepali-maroon: #6B0F1A;
+  /* ── Ivory palette ── */
+  --ivory: #F9F3E8;
+  --ivory-deep: #F0E6D0;
+  --ivory-subtle: #EDE0C8;
+
+  /* ── Accent colours — warm, earthy, modern ── */
+  --red: #9B2335;
+  /* deep rose-red */
+  --red-soft: #C4445A;
+  --gold: #B8892A;
+  --gold-light: #D4A84B;
+  --brown: #3D2010;
+  --brown-mid: #6B3D1E;
+  --brown-soft: #9C6840;
+
+  /* ── Neutrals ── */
+  --ink: #2A1608;
+  --muted: rgba(61, 32, 16, 0.45);
+  --border: rgba(184, 137, 42, 0.2);
+  --border-soft: rgba(184, 137, 42, 0.1);
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 4px rgba(61, 32, 16, 0.08);
+  --shadow-md: 0 4px 20px rgba(61, 32, 16, 0.1);
+  --shadow-lg: 0 8px 40px rgba(61, 32, 16, 0.12);
+}
+
+/* ── Reset & base ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--ivory);
+  color: var(--ink);
+  font-family: 'Crimson Pro', Georgia, serif;
+  line-height: 1.65;
 }
 
 #root {
+  min-height: 100vh;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-  font-family: 'Crimson Pro', serif;
-  background-color: var(--nepali-cream);
-  background-image:
-    repeating-linear-gradient(45deg,
-      transparent,
-      transparent 40px,
-      rgba(200, 151, 43, 0.04) 40px,
-      rgba(200, 151, 43, 0.04) 80px),
-    radial-gradient(ellipse at top, rgba(139, 26, 26, 0.06) 0%, transparent 70%);
-  border-left: 4px solid var(--nepali-gold);
-  border-right: 4px solid var(--nepali-gold);
-  min-height: 100vh;
-  color: var(--nepali-brown);
+  padding: 0 2rem;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-  filter: sepia(0.3) hue-rotate(340deg) saturate(1.4);
+/* ── Typography ── */
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Tiro Devanagari Sanskrit', 'Crimson Pro', serif;
+  color: var(--brown);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em #C8972Baa) sepia(0.2) saturate(1.6);
+h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
 }
 
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #8B1A1Aaa) sepia(0.3) hue-rotate(330deg);
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+h3 {
+  font-size: 1.35rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+p {
+  color: var(--brown-mid);
+  font-size: 1.05rem;
 }
 
+a {
+  color: var(--red);
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+a:hover {
+  color: var(--red-soft);
+}
+
+/* ── Card ── */
 .card {
-  padding: 2em;
-  background: linear-gradient(135deg, rgba(245, 236, 215, 0.9), rgba(255, 248, 230, 0.95));
-  border: 1px solid var(--nepali-gold);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* ── Button ── */
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.6em 1.5em;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Crimson Pro', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 200ms, box-shadow 200ms, transform 120ms;
+}
+
+.btn-primary {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(155, 35, 53, 0.25);
+}
+
+.btn-primary:hover {
+  background: var(--red-soft);
+  box-shadow: 0 4px 18px rgba(155, 35, 53, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--red);
+  border: 1.5px solid var(--red);
+}
+
+.btn-outline:hover {
+  background: rgba(155, 35, 53, 0.06);
+}
+
+/* ── Gold accent line ── */
+.accent-line {
+  display: block;
+  width: 48px;
+  height: 3px;
   border-radius: 2px;
-  box-shadow:
-    0 2px 8px rgba(139, 26, 26, 0.12),
-    inset 0 0 0 1px rgba(200, 151, 43, 0.15);
-  position: relative;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  margin: 0.75rem 0 1.25rem;
 }
 
-.card::before {
-  content: '❈';
-  position: absolute;
-  top: -0.6em;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--nepali-gold);
-  font-size: 1.2em;
-  background: var(--nepali-cream);
-  padding: 0 0.4em;
+.accent-line.center {
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.read-the-docs {
-  color: var(--nepali-maroon);
-  opacity: 0.65;
-  font-style: italic;
-  letter-spacing: 0.03em;
+/* ── Section divider ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 3rem 0;
+}
+
+/* ── Badge / tag ── */
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.75em;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--ivory-deep);
+  color: var(--brown-mid);
+  border: 1px solid var(--border);
+}
+
+/* ── Input ── */
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.65em 1em;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-family: 'Crimson Pro', serif;
+  font-size: 1rem;
+  transition: border-color 180ms, box-shadow 180ms;
+  outline: none;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(184, 137, 42, 0.12);
+}
+
+/* ── Utility ── */
+.text-muted {
+  color: var(--muted);
+}
+
+.text-red {
+  color: var(--red);
+}
+
+.text-gold {
+  color: var(--gold);
+}
+
+.text-brown {
+  color: var(--brown);
+}
+
+.surface {
+  background: var(--ivory-deep);
+  border-radius: 10px;
+}
+
+.surface-soft {
+  background: var(--ivory-subtle);
+  border-radius: 10px;
 }
