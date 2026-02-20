@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import Button from "./Button";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 
 const Navbar = () => {
     const [scrolled, setScrolled] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
 
-    useEffect(() => {
+    React.useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 12);
         window.addEventListener("scroll", onScroll, { passive: true });
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
+
+    // Close dropdown when clicking outside
+    React.useEffect(() => {
+        if (!dropdownOpen) return;
+        const handler = () => setDropdownOpen(false);
+        document.addEventListener("click", handler);
+        return () => document.removeEventListener("click", handler);
+    }, [dropdownOpen]);
+
+    const handleLogout = () => {
+        logout();
+        setDropdownOpen(false);
+        navigate("/");
+    };
 
     const navLink = (to, label, emoji) => {
         const active = location.pathname === to;
@@ -49,7 +66,6 @@ const Navbar = () => {
             }}
             className="flex items-center justify-between px-6 py-3.5 md:px-10"
         >
-
             {/* Logo */}
             <Link
                 to="/"
@@ -69,16 +85,12 @@ const Navbar = () => {
                         className="w-full h-full object-contain rounded-lg"
                     />
                 </div>
-
-                {/* Brand name — dark brown, fully readable */}
                 <span
                     className="text-xl font-bold tracking-wide"
                     style={{ color: "#2A1608", fontFamily: "'Tiro Devanagari Sanskrit', serif" }}
                 >
                     HATI
                 </span>
-
-                {/* Sub-label — medium brown, still legible */}
                 <span
                     className="hidden sm:block text-xs uppercase tracking-widest font-medium"
                     style={{
@@ -93,69 +105,153 @@ const Navbar = () => {
 
             {/* Nav links */}
             <div className="flex items-center gap-8">
-                {navLink("/hati", "Travel Buddy", "🐘")}
+                {navLink("/hati", "Travel Buddy", "🏔️")}
                 {navLink("/plan", "Plan Trip", "🗺️")}
             </div>
 
-            {/* Auth actions */}
+            {/* Auth section */}
             <div className="flex items-center gap-2">
+                {user ? (
+                    /* ── Logged-in: avatar + dropdown ── */
+                    <div className="relative" onClick={e => e.stopPropagation()}>
+                        <button
+                            onClick={() => setDropdownOpen(prev => !prev)}
+                            className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200"
+                            style={{
+                                background: "rgba(155,35,53,0.07)",
+                                border: "1.5px solid rgba(155,35,53,0.2)",
+                                cursor: "pointer",
+                                fontFamily: "inherit",
+                            }}
+                        >
+                            {/* Avatar circle */}
+                            <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                style={{
+                                    background: "linear-gradient(135deg, #9B2335, #C4445A)",
+                                    color: "#fff",
+                                    flexShrink: 0,
+                                }}
+                            >
+                                {user.username?.[0]?.toUpperCase() ?? "U"}
+                            </div>
+                            <span
+                                className="text-xs font-semibold uppercase tracking-widest"
+                                style={{ color: "#6B3D1E" }}
+                            >
+                                {user.username}
+                            </span>
+                            {/* Chevron */}
+                            <svg
+                                width="10" height="10" viewBox="0 0 10 10" fill="none"
+                                style={{
+                                    color: "#9C6840",
+                                    transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                                    transition: "transform 200ms ease",
+                                }}
+                            >
+                                <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </button>
 
-                {/* Sign In — dark enough to read clearly */}
-                <Link to="/login" className="hidden md:block" style={{ textDecoration: "none" }}>
-                    <button
-                        className="text-xs px-4 py-2 uppercase tracking-widest rounded-lg transition-all duration-200 font-semibold"
-                        style={{
-                            background: "transparent",
-                            border: "1.5px solid rgba(107,61,30,0.3)",
-                            color: "#6B3D1E",
-                            fontFamily: "'Crimson Pro', serif",
-                            cursor: "pointer",
-                            letterSpacing: "0.08em",
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.borderColor = "#9B2335";
-                            e.currentTarget.style.color = "#9B2335";
-                            e.currentTarget.style.background = "rgba(155,35,53,0.05)";
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.borderColor = "rgba(107,61,30,0.3)";
-                            e.currentTarget.style.color = "#6B3D1E";
-                            e.currentTarget.style.background = "transparent";
-                        }}
-                    >
-                        Sign In
-                    </button>
-                </Link>
+                        {/* Dropdown */}
+                        {dropdownOpen && (
+                            <div
+                                className="absolute right-0 mt-2 w-44 rounded-xl py-1.5 z-50"
+                                style={{
+                                    background: "#FFFFFF",
+                                    border: "1px solid rgba(184,137,42,0.2)",
+                                    boxShadow: "0 8px 32px rgba(61,32,16,0.12)",
+                                }}
+                            >
+                                {/* Username header */}
+                                <div
+                                    className="px-4 py-2 text-xs uppercase tracking-widest font-semibold border-b"
+                                    style={{
+                                        color: "#9C6840",
+                                        borderColor: "rgba(184,137,42,0.15)",
+                                    }}
+                                >
+                                    {user.username}
+                                </div>
 
-                {/* Register — white on red, always visible */}
-                <Link to="/register" className="hidden md:block" style={{ textDecoration: "none" }}>
-                    <button
-                        className="text-xs px-4 py-2 uppercase tracking-widest rounded-lg font-semibold transition-all duration-200"
-                        style={{
-                            background: "#9B2335",
-                            border: "1.5px solid transparent",
-                            color: "#FFFFFF",
-                            fontFamily: "'Crimson Pro', serif",
-                            cursor: "pointer",
-                            boxShadow: "0 2px 10px rgba(155,35,53,0.25)",
-                            letterSpacing: "0.08em",
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.background = "#7D1C2B";
-                            e.currentTarget.style.boxShadow = "0 4px 16px rgba(155,35,53,0.35)";
-                            e.currentTarget.style.transform = "translateY(-1px)";
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.background = "#9B2335";
-                            e.currentTarget.style.boxShadow = "0 2px 10px rgba(155,35,53,0.25)";
-                            e.currentTarget.style.transform = "translateY(0)";
-                        }}
-                    >
-                        Register
-                    </button>
-                </Link>
+                                {/* Logout */}
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2.5 text-xs uppercase tracking-widest font-semibold transition-all duration-150"
+                                    style={{
+                                        color: "#9B2335",
+                                        background: "transparent",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontFamily: "inherit",
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "rgba(155,35,53,0.06)"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                                >
+                                    🚪 Sign Out
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* ── Logged-out: Sign In + Register ── */
+                    <>
+                        <Link to="/login" className="hidden md:block" style={{ textDecoration: "none" }}>
+                            <button
+                                className="text-xs px-4 py-2 uppercase tracking-widest rounded-lg transition-all duration-200 font-semibold"
+                                style={{
+                                    background: "transparent",
+                                    border: "1.5px solid rgba(107,61,30,0.3)",
+                                    color: "#6B3D1E",
+                                    fontFamily: "inherit",
+                                    cursor: "pointer",
+                                    letterSpacing: "0.08em",
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.borderColor = "#9B2335";
+                                    e.currentTarget.style.color = "#9B2335";
+                                    e.currentTarget.style.background = "rgba(155,35,53,0.05)";
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.borderColor = "rgba(107,61,30,0.3)";
+                                    e.currentTarget.style.color = "#6B3D1E";
+                                    e.currentTarget.style.background = "transparent";
+                                }}
+                            >
+                                Sign In
+                            </button>
+                        </Link>
+
+                        <Link to="/register" className="hidden md:block" style={{ textDecoration: "none" }}>
+                            <button
+                                className="text-xs px-4 py-2 uppercase tracking-widest rounded-lg font-semibold transition-all duration-200"
+                                style={{
+                                    background: "#9B2335",
+                                    border: "1.5px solid transparent",
+                                    color: "#FFFFFF",
+                                    fontFamily: "inherit",
+                                    cursor: "pointer",
+                                    boxShadow: "0 2px 10px rgba(155,35,53,0.25)",
+                                    letterSpacing: "0.08em",
+                                }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.background = "#7D1C2B";
+                                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(155,35,53,0.35)";
+                                    e.currentTarget.style.transform = "translateY(-1px)";
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.background = "#9B2335";
+                                    e.currentTarget.style.boxShadow = "0 2px 10px rgba(155,35,53,0.25)";
+                                    e.currentTarget.style.transform = "translateY(0)";
+                                }}
+                            >
+                                Register
+                            </button>
+                        </Link>
+                    </>
+                )}
             </div>
-
         </nav>
     );
 };

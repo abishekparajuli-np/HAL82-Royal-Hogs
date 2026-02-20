@@ -1,7 +1,14 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 import { hatiAPI } from '../services/api';
 
 const HatiContext = createContext();
+
+// Flatten { "Boudhanath": [url1, url2], "Thamel": [url3] }
+// → [url1, url2, url3]  (max 6 so the strip doesn't overflow)
+function flattenImages(imagesDict) {
+    if (!imagesDict || typeof imagesDict !== 'object') return [];
+    return Object.values(imagesDict).flat().slice(0, 6);
+}
 
 export function HatiProvider({ children }) {
     const [messages, setMessages] = useState([]);
@@ -15,17 +22,25 @@ export function HatiProvider({ children }) {
     const addMsg = useCallback((role, text, extras = {}) => {
         setMessages(prev => [
             ...prev,
-            { id: Date.now() + Math.random(), role, text, ...extras }
+            { id: Date.now() + Math.random(), role, text, ...extras },
         ]);
     }, []);
 
+    /* ── Chat (with optional itinerary images) ── */
     const sendMessage = useCallback(async (text) => {
         if (busy) return;
         setBusy(true);
         addMsg('user', text);
         try {
             const { data } = await hatiAPI.chat(text);
-            addMsg('bot', data.response || data.error);
+
+            // images is a dict keyed by place name; flatten for the bubble
+            const images = flattenImages(data.images);
+
+            addMsg('bot', data.response || data.error, {
+                images,                          // ← passed to MessageBubble
+                hasPlaceImages: images.length > 0,
+            });
         } catch {
             addMsg('bot', '⚠️ Could not reach HATI. Please try again.');
         } finally {
@@ -33,6 +48,7 @@ export function HatiProvider({ children }) {
         }
     }, [busy, addMsg]);
 
+    /* ── Arrival (unchanged, already had images) ── */
     const triggerArrival = useCallback(async (place, lat, lon) => {
         if (busy) return;
         setBusy(true);
@@ -67,9 +83,7 @@ export function HatiProvider({ children }) {
             if (data.options) setRouteOptions(data.options);
             if (data.weather) setWeather(data.weather);
             return data;
-        } catch {
-            return null;
-        }
+        } catch { return null; }
     }, []);
 
     const fetchWeather = useCallback(async (lat, lon) => {

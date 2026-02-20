@@ -69,9 +69,9 @@ const Hero = () => {
                             color: "#2A1608",
                         }}
                     >
-                        Navigate Nepal
+                        Nepal isn’t just visited.
                         <br className="hidden md:block" />
-                        <span style={{ color: "#9B2335" }}> intelligently.</span>
+                        <span style={{ color: "#9B2335" }}> It’s experienced..</span>
                     </h1>
 
                     {/* Gold accent rule */}
@@ -89,9 +89,7 @@ const Hero = () => {
                     className="text-base md:text-lg max-w-md leading-relaxed"
                     style={{ color: "#6B3D1E" }}
                 >
-                    HATI combines real-time mapping, curated local expertise, and
-                    adaptive AI to craft deeply personal Himalayan travel experiences —
-                    from Kathmandu's temple courtyards to Everest Base Camp.
+                    From incense-filled temple alleys to Himalayan trails above the clouds — HATI helps you travel deeper, spend smarter, and discover what guidebooks miss.
                 </p>
 
                 {/* CTA row */}
@@ -118,7 +116,7 @@ const Hero = () => {
                                 e.currentTarget.style.transform = "translateY(0)";
                             }}
                         >
-                            🐘 Talk to HATI
+                            Talk to HATI
                         </button>
                     </Link>
 
@@ -143,7 +141,7 @@ const Hero = () => {
                                 e.currentTarget.style.background = "transparent";
                             }}
                         >
-                            🗺️ Plan Trip
+                            Plan Trip
                         </button>
                     </Link>
                 </div>
