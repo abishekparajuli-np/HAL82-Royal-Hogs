@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Button from "./Btn";
 
 const Navbar = () => {
@@ -10,6 +11,7 @@ const Navbar = () => {
                 </div>
                 NepalSaaS
             </div>
+
             <div className="hidden md:flex gap-8 text-sm font-medium text-gray-400">
                 <a href="#features" className="hover:text-white transition-colors">
                     Features
@@ -21,16 +23,25 @@ const Navbar = () => {
                     Pricing
                 </a>
             </div>
+
             <div>
-                <Button
-                    variant="secondary"
-                    className="text-sm px-4 py-2 hidden md:inline-flex"
-                >
-                    Sign In
-                </Button>
-                <Button variant="primary" className="text-sm px-4 py-2 ml-4 hidden md:inline-flex">
-                    Register
-                </Button>
+                <Link to="/login">
+                    <Button
+                        variant="secondary"
+                        className="text-sm px-4 py-2 hidden md:inline-flex"
+                    >
+                        Sign In
+                    </Button>
+                </Link>
+
+                <Link to="/register">
+                    <Button
+                        variant="primary"
+                        className="text-sm px-4 py-2 ml-4 hidden md:inline-flex"
+                    >
+                        Register
+                    </Button>
+                </Link>
             </div>
         </nav>
     );
