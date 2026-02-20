@@ -14,56 +14,73 @@ function MessageBubble({ msg }) {
     const isUser = msg.role === 'user';
     return (
         <div style={{
-            display: 'flex', alignItems: 'flex-end', gap: 8,
-            marginBottom: 13, flexDirection: isUser ? 'row-reverse' : 'row',
+            display: 'flex', alignItems: 'flex-end', gap: 10,
+            marginBottom: 16, flexDirection: isUser ? 'row-reverse' : 'row',
             animation: 'fadeIn .22s ease',
         }}>
             {/* Avatar */}
             <div style={{
-                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
-                background: isUser
-                    ? 'linear-gradient(135deg,#92400e,#d97706)'
-                    : msg.isArrival
-                        ? 'linear-gradient(135deg,#059669,#34d399)'
-                        : 'linear-gradient(135deg,#065f46,#059669)',
+                width: 30, height: 30, borderRadius: 3, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+                background: isUser ? 'rgba(139,26,26,0.5)' : 'rgba(74,44,10,0.6)',
+                border: isUser
+                    ? '1px solid rgba(200,151,43,0.3)'
+                    : '1px solid rgba(200,151,43,0.2)',
             }}>
                 {isUser ? '✈️' : msg.isArrival ? '🎉' : '🐘'}
             </div>
 
-            <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ maxWidth: '78%', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {/* Role label */}
+                <div style={{
+                    fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase',
+                    color: 'rgba(245,236,215,0.2)',
+                    textAlign: isUser ? 'right' : 'left',
+                    paddingLeft: isUser ? 0 : 2,
+                    paddingRight: isUser ? 2 : 0,
+                }}>
+                    {isUser ? 'You' : 'HATI'}
+                </div>
+
                 {/* Bubble */}
                 <div style={{
-                    padding: '9px 13px', fontSize: 12.5, lineHeight: 1.65, whiteSpace: 'pre-wrap',
-                    borderRadius: isUser ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                    padding: '10px 14px', fontSize: 12.5, lineHeight: 1.7,
+                    whiteSpace: 'pre-wrap',
+                    borderRadius: isUser ? '10px 10px 2px 10px' : '10px 10px 10px 2px',
                     background: isUser
-                        ? 'linear-gradient(135deg,#92400e,#78350f)'
+                        ? 'linear-gradient(135deg, rgba(139,26,26,0.55), rgba(100,20,20,0.4))'
                         : msg.isArrival
-                            ? 'rgba(16,185,129,0.08)'
-                            : 'rgba(255,255,255,0.04)',
-                    border: isUser ? 'none'
-                        : msg.isArrival ? '1px solid rgba(16,185,129,0.28)'
-                            : '1px solid rgba(255,193,7,0.15)',
-                    boxShadow: isUser ? '0 3px 10px rgba(120,53,15,.28)' : 'none',
-                    color: '#f0ede8',
+                            ? 'rgba(16,185,129,0.07)'
+                            : 'rgba(245,236,215,0.03)',
+                    border: isUser
+                        ? '1px solid rgba(200,151,43,0.2)'
+                        : msg.isArrival
+                            ? '1px solid rgba(16,185,129,0.25)'
+                            : '1px solid rgba(200,151,43,0.12)',
+                    boxShadow: isUser
+                        ? '0 3px 12px rgba(139,26,26,0.2)'
+                        : '0 2px 8px rgba(0,0,0,0.15)',
+                    color: '#F5ECD7',
+                    fontFamily: "'Crimson Pro', Georgia, serif",
                 }}>
                     {msg.text}
                 </div>
 
                 {/* Images */}
                 {msg.images && msg.images.length > 0 && (
-                    <div style={{ display: 'flex', gap: 7, overflowX: 'auto', padding: '5px 0', marginTop: 5 }}>
+                    <div style={{ display: 'flex', gap: 7, overflowX: 'auto', padding: '4px 0', marginTop: 4 }}>
                         {msg.images.map((url, i) => (
                             <img key={i} src={url} alt="Place"
                                 onClick={() => window.open(url, '_blank')}
                                 onError={e => e.target.remove()}
                                 style={{
-                                    height: 85, width: 125, objectFit: 'cover',
-                                    borderRadius: 7, border: '1px solid rgba(255,193,7,0.15)',
-                                    flexShrink: 0, cursor: 'pointer', transition: 'transform .2s',
+                                    height: 88, width: 130, objectFit: 'cover',
+                                    borderRadius: 3,
+                                    border: '1px solid rgba(200,151,43,0.2)',
+                                    flexShrink: 0, cursor: 'pointer', transition: 'all .2s',
                                 }}
-                                onMouseOver={e => e.target.style.transform = 'scale(1.04)'}
-                                onMouseOut={e => e.target.style.transform = 'scale(1)'}
+                                onMouseOver={e => { e.target.style.transform = 'scale(1.04)'; e.target.style.borderColor = 'rgba(200,151,43,0.5)'; }}
+                                onMouseOut={e => { e.target.style.transform = 'scale(1)'; e.target.style.borderColor = 'rgba(200,151,43,0.2)'; }}
                             />
                         ))}
                     </div>
@@ -75,21 +92,23 @@ function MessageBubble({ msg }) {
 
 function TypingIndicator() {
     return (
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 13 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: 16 }}>
             <div style={{
-                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
-                background: 'linear-gradient(135deg,#065f46,#059669)',
+                width: 30, height: 30, borderRadius: 3, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+                background: 'rgba(74,44,10,0.6)',
+                border: '1px solid rgba(200,151,43,0.2)',
             }}>🐘</div>
             <div style={{
-                padding: '9px 13px', borderRadius: '14px 14px 14px 4px',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,193,7,0.15)',
+                padding: '10px 14px', borderRadius: '10px 10px 10px 2px',
+                background: 'rgba(245,236,215,0.03)',
+                border: '1px solid rgba(200,151,43,0.12)',
             }}>
-                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                     {[0, 0.2, 0.4].map((delay, i) => (
                         <span key={i} style={{
-                            width: 6, height: 6, borderRadius: '50%', background: '#ffc107',
-                            display: 'inline-block',
+                            width: 5, height: 5, borderRadius: '50%',
+                            background: '#C8972B', display: 'inline-block',
                             animation: `bounce 1.2s ${delay}s infinite`,
                         }} />
                     ))}
@@ -118,32 +137,70 @@ export default function HatiChat() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
             <style>{`
-        @keyframes fadeIn { from { opacity:0; transform:translateY(5px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes bounce { 0%,80%,100% { transform:translateY(0); opacity:.3 } 40% { transform:translateY(-5px); opacity:1 } }
-        .hati-scrollbar::-webkit-scrollbar { width: 3px }
-        .hati-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,193,7,0.18); border-radius: 4px }
-        .chip-btn:hover { background: rgba(255,193,7,0.13) !important; transform: translateY(-1px) }
-      `}</style>
+                @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+                @keyframes bounce { 0%,80%,100% { transform:translateY(0); opacity:.3 } 40% { transform:translateY(-5px); opacity:1 } }
+                .hati-scrollbar::-webkit-scrollbar { width: 3px }
+                .hati-scrollbar::-webkit-scrollbar-thumb { background: rgba(200,151,43,0.15); border-radius: 2px }
+                .chip-btn:hover { background: rgba(200,151,43,0.1) !important; border-color: rgba(200,151,43,0.4) !important; color: #C8972B !important; transform: translateY(-1px); }
+                .send-btn:hover:not(:disabled) { background: #C8972B !important; }
+                .chat-input::placeholder { color: rgba(245,236,215,0.2); font-style: italic; }
+                .chat-input:focus { outline: none; }
+            `}</style>
 
             {/* Messages */}
-            <div ref={msgsRef} className="hati-scrollbar" style={{ flex: 1, overflowY: 'auto', padding: 14 }}>
+            <div ref={msgsRef} className="hati-scrollbar"
+                style={{ flex: 1, overflowY: 'auto', padding: '18px 16px' }}>
 
                 {messages.length === 0 ? (
-                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 11, textAlign: 'center' }}>
-                        <div style={{ fontSize: 40 }}>🏔️</div>
-                        <h2 style={{ fontFamily: 'serif', fontSize: 22, color: '#ffc107' }}>Namaste!</h2>
-                        <p style={{ color: 'rgba(240,237,232,0.4)', fontSize: 12, maxWidth: 240, lineHeight: 1.6 }}>
-                            Ask me about any place in Nepal — history, culture, phrases, what to see.
-                        </p>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center' }}>
+                    <div style={{
+                        height: '100%', display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center',
+                        gap: 14, textAlign: 'center', padding: '0 20px',
+                    }}>
+                        <div style={{ fontSize: 36, marginBottom: 4 }}>🏔️</div>
+
+                        <div>
+                            <h2 style={{
+                                fontFamily: "'Tiro Devanagari Sanskrit', serif",
+                                fontSize: 22, color: '#C8972B', letterSpacing: '0.08em',
+                                marginBottom: 6,
+                            }}>नमस्ते — Namaste</h2>
+                            <div style={{
+                                display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', gap: 8, marginBottom: 10,
+                            }}>
+                                <div style={{ height: 1, width: 32, background: 'rgba(200,151,43,0.25)' }}></div>
+                                <span style={{ color: 'rgba(200,151,43,0.3)', fontSize: 11 }}>❈</span>
+                                <div style={{ height: 1, width: 32, background: 'rgba(200,151,43,0.25)' }}></div>
+                            </div>
+                            <p style={{
+                                color: 'rgba(245,236,215,0.35)', fontSize: 12,
+                                maxWidth: 260, lineHeight: 1.7, margin: '0 auto',
+                                fontFamily: "'Crimson Pro', serif",
+                            }}>
+                                Ask me about any destination in Nepal — history, culture,
+                                sacred sites, trekking routes, and local phrases.
+                            </p>
+                        </div>
+
+                        {/* Quick chips */}
+                        <div style={{
+                            display: 'flex', flexWrap: 'wrap', gap: 7,
+                            justifyContent: 'center', maxWidth: 340,
+                        }}>
                             {CHIPS.map(c => (
-                                <button key={c.label} className="chip-btn" onClick={() => sendMessage(c.text)} style={{
-                                    padding: '6px 12px', borderRadius: 18,
-                                    border: '1px solid rgba(255,193,7,0.15)',
-                                    background: 'rgba(255,193,7,0.05)', color: '#fde68a',
-                                    fontSize: 11.5, cursor: 'pointer', transition: 'all .2s',
-                                    fontFamily: 'inherit',
-                                }}>{c.label}</button>
+                                <button key={c.label} className="chip-btn"
+                                    onClick={() => sendMessage(c.text)}
+                                    style={{
+                                        padding: '5px 12px', borderRadius: 2,
+                                        border: '1px solid rgba(200,151,43,0.18)',
+                                        background: 'rgba(200,151,43,0.04)',
+                                        color: 'rgba(245,236,215,0.5)',
+                                        fontSize: 11, cursor: 'pointer',
+                                        transition: 'all .2s', fontFamily: 'inherit',
+                                        letterSpacing: '0.04em',
+                                    }}>{c.label}
+                                </button>
                             ))}
                         </div>
                     </div>
@@ -155,34 +212,56 @@ export default function HatiChat() {
                 )}
             </div>
 
-            {/* Input */}
-            <div style={{ padding: '9px 13px 12px', borderTop: '1px solid rgba(255,193,7,0.15)', background: 'rgba(0,0,0,0.15)', flexShrink: 0 }}>
+            {/* Input bar */}
+            <div style={{
+                padding: '10px 14px 13px',
+                borderTop: '1px solid rgba(200,151,43,0.15)',
+                background: 'rgba(26,10,0,0.6)',
+                flexShrink: 0,
+            }}>
                 <div style={{
-                    display: 'flex', gap: 7, alignItems: 'center',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,193,7,0.15)',
-                    borderRadius: 11, padding: '6px 6px 6px 12px',
+                    display: 'flex', gap: 8, alignItems: 'center',
+                    background: 'rgba(245,236,215,0.03)',
+                    border: '1px solid rgba(200,151,43,0.18)',
+                    borderRadius: 3, padding: '7px 7px 7px 14px',
+                    transition: 'border-color 0.2s',
                 }}>
                     <input
-                        value={input} onChange={e => setInput(e.target.value)}
+                        className="chat-input"
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && send()}
-                        placeholder="Ask about any place in Nepal..."
+                        placeholder="Ask about any destination in Nepal..."
                         style={{
                             flex: 1, background: 'transparent', border: 'none',
-                            color: '#f0ede8', fontSize: 12.5, fontFamily: 'inherit', outline: 'none',
+                            color: '#F5ECD7', fontSize: 12.5,
+                            fontFamily: "'Crimson Pro', Georgia, serif",
+                            letterSpacing: '0.02em',
                         }}
                     />
-                    <button onClick={send} disabled={busy} style={{
-                        width: 32, height: 32, borderRadius: 7, border: 'none',
-                        background: busy ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg,#d97706,#92400e)',
-                        color: busy ? 'rgba(255,193,7,0.2)' : '#fff',
-                        cursor: busy ? 'default' : 'pointer', fontSize: 13,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all .2s',
-                    }}>➤</button>
+                    <button
+                        className="send-btn"
+                        onClick={send}
+                        disabled={busy}
+                        style={{
+                            width: 33, height: 33, borderRadius: 2,
+                            border: '1px solid rgba(200,151,43,0.2)',
+                            background: busy ? 'rgba(200,151,43,0.08)' : '#8B1A1A',
+                            color: busy ? 'rgba(200,151,43,0.2)' : '#F5ECD7',
+                            cursor: busy ? 'default' : 'pointer',
+                            fontSize: 14, display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                            transition: 'all .2s',
+                        }}>➤</button>
                 </div>
-                <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,193,7,0.18)', marginTop: 5 }}>
-                    🐘 HATI v2 · Groq + Llama 3 · Open-Meteo Weather · Nepal Travel Intelligence
+
+                {/* Footer attribution */}
+                <div style={{
+                    textAlign: 'center', fontSize: 9.5, marginTop: 7,
+                    color: 'rgba(200,151,43,0.2)', letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                }}>
+                    ❈ HATI · Groq + Llama 3 · Open-Meteo Weather · Nepal Travel Intelligence
                 </div>
             </div>
         </div>

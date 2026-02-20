@@ -6,47 +6,38 @@ import { HatiProvider } from "./context/HatiContext";
 
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import Features from "./components/Features";
 import CTAFooter from "./components/CTAFooter";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import HatiPage from "./pages/HatiPage";
+import PlannerPage from "./pages/PlannerPage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <HatiProvider>
-          <div className="min-h-screen bg-[#0B1220] text-[#E5E7EB] font-sans selection:bg-[#3B82F6]/30">
+          <div className="min-h-screen bg-[#1A0A00] text-[#F5ECD7] font-serif selection:bg-[#C8972B]/30 flex flex-col">
 
             <Navbar />
 
-            <main>
+            <main className="flex-1">
               <Routes>
-
-                {/* Home */}
-                <Route
-                  path="/"
-                  element={
-                    <>
-                      <Hero />
-                      <Features />
-                    </>
-                  }
-                />
-
-                {/* Auth */}
+                <Route path="/" element={<Hero />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-
-                {/* HATI Travel AI */}
                 <Route path="/hati" element={<HatiPage />} />
-
+                <Route path="/plan" element={<PlannerPage />} />
               </Routes>
             </main>
 
-            <CTAFooter />
+            <footer className="border-t border-[#C8972B]/10 py-4 text-center">
+              <p className="text-[#F5ECD7]/20 text-xs uppercase tracking-widest">
+                &copy; {new Date().getFullYear()} HATI · All rights reserved.
+              </p>
+            </footer>
+
           </div>
         </HatiProvider>
       </AuthProvider>

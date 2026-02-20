@@ -1,5 +1,5 @@
 import React from "react";
-import Button from "./Btn"
+import Button from "./Button"
 
 const CTAFooter = () => {
     return (

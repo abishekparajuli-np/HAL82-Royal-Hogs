@@ -4,7 +4,6 @@ import WeatherBar from './WeatherBar';
 import RouteCards from './RouteCards';
 import 'leaflet/dist/leaflet.css';
 
-// Nepal landmark dictionary
 const NEPAL_PLACES = {
     'boudhanath': [27.7215, 85.3620], 'boudha': [27.7215, 85.3620],
     'pashupatinath': [27.7109, 85.3487], 'pashupati': [27.7109, 85.3487],
@@ -39,7 +38,7 @@ async function geocode(q) {
                 lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon),
                 name: d[0].display_name.split(',').slice(0, 2).join(', ')
             };
-        } catch { /* try next */ }
+        } catch { }
     }
     return null;
 }
@@ -70,7 +69,6 @@ export default function HatiMap() {
     const [arrived, setArrived] = useState(false);
     const [showSimBar, setShowSimBar] = useState(false);
 
-    // Init map
     useEffect(() => {
         if (leafletMap.current) return;
         import('leaflet').then(L => {
@@ -80,15 +78,7 @@ export default function HatiMap() {
             }).addTo(map);
             leafletMap.current = { map, L: L.default };
         });
-        return () => {
-            if (simRef.current) clearInterval(simRef.current);
-        };
-    }, []);
-
-    const makeIcon = useCallback((html) => {
-        if (!leafletMap.current) return null;
-        const { L } = leafletMap.current;
-        return L.divIcon({ html, iconSize: [26, 26], iconAnchor: [13, 13], className: '' });
+        return () => { if (simRef.current) clearInterval(simRef.current); };
     }, []);
 
     const clearMarkers = useCallback(() => {
@@ -100,7 +90,7 @@ export default function HatiMap() {
 
     const getRoute = useCallback(async () => {
         if (!originInput.trim() || !destInput.trim()) { setErr('Enter both origin and destination.'); return; }
-        setErr(''); setHint('🔍 Searching...');
+        setErr(''); setHint('Searching...');
         if (simRef.current) { clearInterval(simRef.current); simRef.current = null; }
         setSimRunning(false); setArrived(false); setShowSimBar(false); setSimPct(0);
 
@@ -114,23 +104,22 @@ export default function HatiMap() {
 
         markersRef.current.origin = L.marker([o.lat, o.lon], {
             icon: L.divIcon({ html: '<div style="font-size:20px">🟢</div>', iconSize: [26, 26], iconAnchor: [13, 13], className: '' })
-        }).addTo(map).bindPopup(`🟢 From: ${o.name}`);
+        }).addTo(map).bindPopup(`From: ${o.name}`);
 
         markersRef.current.dest = L.marker([d.lat, d.lon], {
             icon: L.divIcon({ html: '<div style="font-size:20px">📍</div>', iconSize: [26, 26], iconAnchor: [13, 13], className: '' })
-        }).addTo(map).bindPopup(`📍 To: ${d.name}`).openPopup();
+        }).addTo(map).bindPopup(`To: ${d.name}`).openPopup();
 
         markersRef.current.line = L.polyline([[o.lat, o.lon], [d.lat, d.lon]], {
-            color: '#ffc107', weight: 2.5, dashArray: '8 5', opacity: 0.75
+            color: '#C8972B', weight: 2, dashArray: '8 5', opacity: 0.6
         }).addTo(map);
 
         map.fitBounds([[o.lat, o.lon], [d.lat, d.lon]], { padding: [55, 55] });
 
         const dm = distM({ lat: o.lat, lon: o.lon }, { lat: d.lat, lon: d.lon });
         const dk = (dm / 1000).toFixed(1);
-        setHint(`📏 ${dk} km · Pick transport below · ▶ to simulate journey`);
+        setHint(`${dk} km · Select transport below · Simulate to begin journey`);
         setDistLabel('');
-
         await fetchRoute(parseFloat(dk), d.lat, d.lon);
     }, [originInput, destInput, fetchRoute, setOrigin, setDest, clearMarkers]);
 
@@ -149,11 +138,11 @@ export default function HatiMap() {
             const lat = origin.lat + (dest.lat - origin.lat) * t;
             const lon = origin.lon + (dest.lon - origin.lon) * t;
             const pct = Math.round(t * 100);
-
             setSimPct(pct);
+
             const simIcon = L.divIcon({
-                html: '<div style="width:14px;height:14px;background:#8b5cf6;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(139,92,246,.9)"></div>',
-                iconSize: [14, 14], iconAnchor: [7, 7], className: ''
+                html: '<div style="width:13px;height:13px;background:#C8972B;border:2px solid #F5ECD7;border-radius:50%;box-shadow:0 0 10px rgba(200,151,43,0.8)"></div>',
+                iconSize: [13, 13], iconAnchor: [6, 6], className: ''
             });
 
             if (markersRef.current.sim) markersRef.current.sim.setLatLng([lat, lon]);
@@ -164,7 +153,7 @@ export default function HatiMap() {
 
             if (step >= steps || remaining < 80) {
                 clearInterval(simRef.current); simRef.current = null;
-                setSimRunning(false); setSimPct(100); setDistLabel('Arrived! 🎉');
+                setSimRunning(false); setSimPct(100); setDistLabel('Arrived!');
                 setArrived(true);
                 triggerArrival(dest.name, dest.lat, dest.lon);
             }
@@ -182,8 +171,7 @@ export default function HatiMap() {
     }, [dest, arrived, triggerArrival]);
 
     const resetAll = useCallback(() => {
-        stopSimulation();
-        clearMarkers();
+        stopSimulation(); clearMarkers();
         setOrigin(null); setDest(null);
         setOriginInput(''); setDestInput('');
         setErr(''); setHint('Enter origin and destination to find routes');
@@ -192,103 +180,241 @@ export default function HatiMap() {
     }, [stopSimulation, clearMarkers, setOrigin, setDest]);
 
     const inp = {
-        flex: 1, padding: '7px 11px',
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,193,7,0.15)',
-        borderRadius: 8, color: '#f0ede8', fontSize: 12.5,
-        fontFamily: 'inherit', outline: 'none',
+        flex: 1, padding: '10px 14px',
+        background: 'rgba(245,236,215,0.04)',
+        border: '1px solid rgba(200,151,43,0.18)',
+        borderRadius: 2, color: '#F5ECD7', fontSize: 13,
+        fontFamily: "'Crimson Pro', Georgia, serif",
+        outline: 'none', letterSpacing: '0.02em',
     };
 
-    const btn = (extra = {}) => ({
-        padding: '7px 12px', borderRadius: 8, border: 'none',
-        fontSize: 12, cursor: 'pointer', fontWeight: 500,
-        transition: 'all .2s', whiteSpace: 'nowrap', fontFamily: 'inherit',
-        ...extra,
+    const actionBtn = (bg, border, color) => ({
+        flex: 1, padding: '9px 12px', borderRadius: 2,
+        border: `1px solid ${border}`, background: bg, color,
+        fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+        letterSpacing: '0.1em', textTransform: 'uppercase',
+        fontWeight: 500, transition: 'all .2s', whiteSpace: 'nowrap',
     });
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            {/* Controls */}
-            <div style={{ padding: '9px 13px', background: 'rgba(0,0,0,0.28)', borderBottom: '1px solid rgba(255,193,7,0.15)', flexShrink: 0 }}>
-                <div style={{ display: 'flex', gap: 7, alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 10.5, color: 'rgba(240,237,232,0.4)', minWidth: 28 }}>📍 From</span>
-                    <input style={inp} value={originInput} onChange={e => setOriginInput(e.target.value)}
-                        placeholder="e.g. Thamel, Kathmandu" onKeyDown={e => e.key === 'Enter' && getRoute()} />
-                </div>
-                <div style={{ display: 'flex', gap: 7, alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 10.5, color: 'rgba(240,237,232,0.4)', minWidth: 28 }}>🏁 To</span>
-                    <input style={inp} value={destInput} onChange={e => setDestInput(e.target.value)}
-                        placeholder="e.g. Boudhanath Stupa" onKeyDown={e => e.key === 'Enter' && getRoute()} />
-                    <button onClick={getRoute} style={btn({ background: 'linear-gradient(135deg,#d97706,#92400e)', color: '#fff' })}>
-                        Find Route
-                    </button>
-                </div>
-                <div style={{ display: 'flex', gap: 7 }}>
-                    <button onClick={simRunning ? stopSimulation : startSimulation} style={btn({
-                        flex: 1,
-                        background: simRunning ? 'rgba(16,185,129,0.14)' : 'rgba(59,130,246,0.14)',
-                        border: `1px solid ${simRunning ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.28)'}`,
-                        color: simRunning ? '#6ee7b7' : '#93c5fd',
-                    })}>
-                        {simRunning ? '⏹ Stop' : '▶ Simulate Journey'}
-                    </button>
-                    <button onClick={manualArrival} style={btn({
-                        flex: 1, background: 'rgba(168,85,247,0.14)',
-                        border: '1px solid rgba(168,85,247,0.3)', color: '#c4b5fd',
-                    })}>🎯 I Am Here</button>
-                    <button onClick={resetAll} style={btn({
-                        background: 'rgba(239,68,68,0.12)',
-                        border: '1px solid rgba(239,68,68,0.28)', color: '#fca5a5',
-                    })}>↺ Reset</button>
+            <style>{`
+                .hati-inp:focus { border-color: rgba(200,151,43,0.55) !important; background: rgba(245,236,215,0.06) !important; }
+                .hati-inp::placeholder { color: rgba(245,236,215,0.18); font-style: italic; }
+                .find-btn:hover { background: #C8972B !important; }
+                .action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+            `}</style>
+
+            {/* ── Controls Panel ── */}
+            <div style={{
+                padding: '16px 18px',
+                flexShrink: 0,
+                background: 'rgba(26,10,0,0.75)',
+                borderBottom: '1px solid rgba(200,151,43,0.2)',
+            }}>
+
+                {/* Section label */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14,
+                }}>
+                    <div style={{ height: 1, flex: 1, background: 'rgba(200,151,43,0.12)' }}></div>
+                    <span style={{
+                        fontSize: 9, color: 'rgba(200,151,43,0.35)',
+                        textTransform: 'uppercase', letterSpacing: '0.2em',
+                    }}>Route Planner</span>
+                    <div style={{ height: 1, flex: 1, background: 'rgba(200,151,43,0.12)' }}></div>
                 </div>
 
-                {hint && !err && <div style={{ fontSize: 11, color: 'rgba(255,193,7,0.55)', textAlign: 'center', marginTop: 5 }}>{hint}</div>}
-                {err && <div style={{ fontSize: 11, color: '#fca5a5', textAlign: 'center', marginTop: 5 }}>⚠️ {err}</div>}
+                {/* Input grid */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+
+                    {/* Origin */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                            minWidth: 52, textAlign: 'right',
+                            fontSize: 9, color: 'rgba(200,151,43,0.45)',
+                            textTransform: 'uppercase', letterSpacing: '0.15em',
+                            paddingTop: 2,
+                        }}>Origin</div>
+                        <div style={{
+                            flex: 1, display: 'flex', alignItems: 'center',
+                            border: '1px solid rgba(200,151,43,0.18)',
+                            borderRadius: 2, background: 'rgba(245,236,215,0.04)',
+                            overflow: 'hidden',
+                        }}>
+                            <span style={{ padding: '0 10px', fontSize: 13, opacity: 0.5 }}>🟢</span>
+                            <input
+                                className="hati-inp"
+                                style={{ ...inp, border: 'none', flex: 1, background: 'transparent', padding: '10px 10px 10px 0' }}
+                                value={originInput}
+                                onChange={e => setOriginInput(e.target.value)}
+                                placeholder="e.g. Thamel, Kathmandu"
+                                onKeyDown={e => e.key === 'Enter' && getRoute()}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Connector dot */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ minWidth: 52 }}></div>
+                        <div style={{ paddingLeft: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ width: 1, height: 10, background: 'rgba(200,151,43,0.2)' }}></div>
+                            <span style={{ fontSize: 8, color: 'rgba(200,151,43,0.2)', letterSpacing: '0.1em' }}>│</span>
+                        </div>
+                    </div>
+
+                    {/* Destination */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                            minWidth: 52, textAlign: 'right',
+                            fontSize: 9, color: 'rgba(200,151,43,0.45)',
+                            textTransform: 'uppercase', letterSpacing: '0.15em',
+                            paddingTop: 2,
+                        }}>Dest</div>
+                        <div style={{
+                            flex: 1, display: 'flex', alignItems: 'center',
+                            border: '1px solid rgba(200,151,43,0.18)',
+                            borderRadius: 2, background: 'rgba(245,236,215,0.04)',
+                            overflow: 'hidden',
+                        }}>
+                            <span style={{ padding: '0 10px', fontSize: 13, opacity: 0.5 }}>📍</span>
+                            <input
+                                className="hati-inp"
+                                style={{ ...inp, border: 'none', flex: 1, background: 'transparent', padding: '10px 10px 10px 0' }}
+                                value={destInput}
+                                onChange={e => setDestInput(e.target.value)}
+                                placeholder="e.g. Boudhanath Stupa"
+                                onKeyDown={e => e.key === 'Enter' && getRoute()}
+                            />
+                        </div>
+                        <button className="find-btn" onClick={getRoute} style={{
+                            padding: '10px 20px', borderRadius: 2,
+                            border: '1px solid rgba(200,151,43,0.3)',
+                            background: '#8B1A1A', color: '#F5ECD7',
+                            fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
+                            letterSpacing: '0.12em', textTransform: 'uppercase',
+                            fontWeight: 600, transition: 'background .2s', whiteSpace: 'nowrap',
+                        }}>Find Route</button>
+                    </div>
+                </div>
+
+                {/* Divider */}
+                <div style={{ height: 1, background: 'rgba(200,151,43,0.08)', margin: '12px 0' }}></div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="action-btn" onClick={simRunning ? stopSimulation : startSimulation}
+                        style={actionBtn(
+                            simRunning ? 'rgba(139,26,26,0.15)' : 'rgba(200,151,43,0.07)',
+                            simRunning ? 'rgba(139,26,26,0.4)' : 'rgba(200,151,43,0.25)',
+                            simRunning ? '#e07070' : 'rgba(200,151,43,0.75)',
+                        )}>
+                        {simRunning ? '⏹ Stop Simulation' : '▶ Simulate Journey'}
+                    </button>
+                    <button className="action-btn" onClick={manualArrival}
+                        style={actionBtn(
+                            'rgba(74,44,10,0.3)',
+                            'rgba(200,151,43,0.2)',
+                            'rgba(245,236,215,0.5)',
+                        )}>
+                        🎯 I Am Here
+                    </button>
+                    <button className="action-btn" onClick={resetAll}
+                        style={actionBtn(
+                            'rgba(139,26,26,0.1)',
+                            'rgba(139,26,26,0.3)',
+                            '#e07070',
+                        )}>
+                        ↺ Reset
+                    </button>
+                </div>
+
+                {/* Hint / Error */}
+                {!err && hint && (
+                    <div style={{
+                        marginTop: 10, fontSize: 10,
+                        color: 'rgba(200,151,43,0.35)',
+                        textAlign: 'center', letterSpacing: '0.08em',
+                        fontStyle: 'italic',
+                    }}>❈ {hint}</div>
+                )}
+                {err && (
+                    <div style={{
+                        marginTop: 10, fontSize: 10.5, color: '#e07070',
+                        textAlign: 'center', letterSpacing: '0.06em',
+                    }}>⚠ {err}</div>
+                )}
             </div>
 
-            {/* Weather */}
+            {/* ── Weather ── */}
             <WeatherBar />
 
-            {/* Route cards */}
+            {/* ── Route cards ── */}
             <RouteCards options={routeOptions} />
 
-            {/* Sim progress */}
+            {/* ── Simulation progress ── */}
             {showSimBar && (
-                <div style={{ padding: '6px 14px', background: 'rgba(168,85,247,0.1)', borderBottom: '1px solid rgba(168,85,247,0.2)', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#c4b5fd', marginBottom: 4 }}>
+                <div style={{
+                    padding: '10px 18px', flexShrink: 0,
+                    background: 'rgba(26,10,0,0.5)',
+                    borderBottom: '1px solid rgba(200,151,43,0.15)',
+                }}>
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        fontSize: 10, color: 'rgba(200,151,43,0.45)',
+                        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
+                    }}>
                         <span>{origin?.name?.split(',')[0]}</span>
-                        <span>{simPct}%</span>
+                        <span style={{ color: '#C8972B', fontWeight: 600 }}>{simPct}%</span>
                         <span>{dest?.name?.split(',')[0]}</span>
                     </div>
-                    <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${simPct}%`, background: 'linear-gradient(90deg,#8b5cf6,#c4b5fd)', borderRadius: 4, transition: 'width .5s linear' }} />
+                    <div style={{ height: 3, background: 'rgba(245,236,215,0.06)', borderRadius: 1, overflow: 'hidden' }}>
+                        <div style={{
+                            height: '100%', width: `${simPct}%`,
+                            background: 'linear-gradient(90deg, #8B1A1A, #C8972B)',
+                            borderRadius: 1, transition: 'width .5s linear',
+                        }} />
                     </div>
                 </div>
             )}
 
-            {/* Arrived banner */}
+            {/* ── Arrived banner ── */}
             {arrived && (
                 <div style={{
-                    margin: '7px 13px', padding: '9px 13px', borderRadius: 9,
-                    background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)',
-                    color: '#6ee7b7', fontSize: 12, textAlign: 'center', fontWeight: 500,
+                    margin: '10px 18px', padding: '11px 16px', borderRadius: 2,
+                    background: 'rgba(74,44,10,0.35)',
+                    border: '1px solid rgba(200,151,43,0.3)',
+                    color: '#C8972B', fontSize: 12, textAlign: 'center',
+                    letterSpacing: '0.06em', fontFamily: "'Crimson Pro', serif",
                 }}>
-                    🎉 Arrived at {dest?.name?.split(',')[0]}! Switched to guide chat →
+                    ❈ Arrived at <strong>{dest?.name?.split(',')[0]}</strong> — Switched to destination guide →
                 </div>
             )}
 
-            {/* Map */}
+            {/* ── Map ── */}
             <div ref={mapRef} style={{ flex: 1, minHeight: 100 }} />
 
-            {/* Footer */}
+            {/* ── Legend footer ── */}
             <div style={{
-                padding: '6px 13px', background: 'rgba(0,0,0,0.2)',
-                borderTop: '1px solid rgba(255,193,7,0.15)',
-                display: 'flex', gap: 12, fontSize: 10, color: 'rgba(240,237,232,0.4)',
-                alignItems: 'center', flexShrink: 0, flexWrap: 'wrap',
+                padding: '8px 18px', flexShrink: 0,
+                background: 'rgba(26,10,0,0.75)',
+                borderTop: '1px solid rgba(200,151,43,0.12)',
+                display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
             }}>
-                <span>🟢 Origin</span><span>📍 Destination</span><span>🔵 Simulated</span>
-                {distLabel && <span style={{ marginLeft: 'auto', color: 'rgba(255,193,7,0.55)' }}>{distLabel}</span>}
+                {[['🟢', 'Origin'], ['📍', 'Destination'], ['🟡', 'Route']].map(([icon, label]) => (
+                    <span key={label} style={{
+                        fontSize: 9.5, color: 'rgba(245,236,215,0.2)',
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        textTransform: 'uppercase', letterSpacing: '0.12em',
+                    }}>{icon} {label}</span>
+                ))}
+                {distLabel && (
+                    <span style={{
+                        marginLeft: 'auto', fontSize: 10,
+                        color: 'rgba(200,151,43,0.5)',
+                        letterSpacing: '0.1em', textTransform: 'uppercase',
+                    }}>❈ {distLabel}</span>
+                )}
             </div>
         </div>
     );
