@@ -3,6 +3,7 @@ import os
 class BaseConfig:
 
     SECRET_KEY=os.getenv('SECRET_KEY','dev-fallback-key-change-me')
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
     SQLALCHEMY_DATABASE_URI = os.getenv(
     "DATABASE_URL",

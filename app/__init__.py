@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from app.config import BaseConfig
 from app.extensions import db, migrate, jwt
+from app.models.Services import hati_ai_service
 
 def create_app():
     app = Flask(__name__, static_folder='static', static_url_path='')
@@ -43,6 +44,7 @@ def _init_extensions(app):
     db.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
+    hati_ai_service.init_app(app)
     _init_redis(app)
     _configure_jwt(app)
 
@@ -98,6 +100,8 @@ def _register_blueprints(app):
     app.register_blueprint(health_bp, url_prefix='/api')
     from app.blueprints.auth import auth_bp, routes
     app.register_blueprint(auth_bp, url_prefix='/api')
+    from app.blueprints.hati import hati_bp, routes
+    app.register_blueprint(hati_bp,url_prefix='/api/hati')
 
 
 def _register_error_handler(app):

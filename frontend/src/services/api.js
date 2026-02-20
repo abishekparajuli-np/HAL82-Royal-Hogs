@@ -1,20 +1,30 @@
-import axios from 'axios';
+import axios from "axios";
 
-// Create axios instance
+// =====================================
+// CONFIG
+// =====================================
+
+const BASE_URL = "http://localhost:5000/api";
+
+// =====================================
+// AXIOS INSTANCE
+// =====================================
+
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: BASE_URL,
     headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
     },
 });
 
-// -----------------------------
+// =====================================
 // REQUEST INTERCEPTOR
-// Attach access token
-// -----------------------------
+// Attach access token automatically
+// =====================================
+
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem("access_token");
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -25,10 +35,11 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// -----------------------------
+// =====================================
 // RESPONSE INTERCEPTOR
-// Auto refresh on 401
-// -----------------------------
+// Auto refresh expired access token
+// =====================================
+
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
@@ -40,18 +51,16 @@ api.interceptors.response.use(
         ) {
             originalRequest._retry = true;
 
-            const refreshToken = localStorage.getItem('refresh_token');
+            const refreshToken = localStorage.getItem("refresh_token");
 
             if (!refreshToken) {
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                window.location.href = '/login';
+                clearAuth();
                 return Promise.reject(error);
             }
 
             try {
                 const response = await axios.post(
-                    'http://localhost:5000/api/auth/refresh',
+                    `${BASE_URL}/auth/refresh`,
                     {},
                     {
                         headers: {
@@ -62,15 +71,14 @@ api.interceptors.response.use(
 
                 const { access_token } = response.data;
 
-                localStorage.setItem('access_token', access_token);
+                localStorage.setItem("access_token", access_token);
 
                 originalRequest.headers.Authorization = `Bearer ${access_token}`;
 
                 return api(originalRequest);
+
             } catch (refreshError) {
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                window.location.href = '/login';
+                clearAuth();
                 return Promise.reject(refreshError);
             }
         }
@@ -79,15 +87,47 @@ api.interceptors.response.use(
     }
 );
 
-// -----------------------------
-// Auth APIs
-// -----------------------------
+// =====================================
+// HELPER
+// =====================================
+
+function clearAuth() {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    window.location.href = "/login";
+}
+
+// =====================================
+// AUTH APIs
+// =====================================
+
 export const authAPI = {
-    register: (data) => api.post('/auth/register', data),
-    login: (data) => api.post('/auth/login', data),
-    logout: () => api.post('/auth/logout'),
-    getMe: () => api.get('/auth/me'),
-    refresh: () => api.post('/auth/refresh'),
+    register: (data) => api.post("/auth/register", data),
+    login: (data) => api.post("/auth/login", data),
+    logout: () => api.post("/auth/logout"),
+    getMe: () => api.get("/auth/me"),
+    refresh: () => api.post("/auth/refresh"),
 };
 
+// =====================================
+// HATI APIs
+// =====================================
+
+export const hatiAPI = {
+    chat: (message) =>
+        api.post("/hati/chat", { message }),
+
+    arrival: (place, lat, lon) =>
+        api.post("/hati/arrival", { place, lat, lon }),
+
+    // ✅ was missing lat and lon
+    route: (distance_km, lat, lon) =>
+        api.post("/hati/route", { distance_km, lat, lon }),
+
+    weather: (lat, lon) =>
+        api.post("/hati/weather", { lat, lon }),
+
+    reset: () =>
+        api.post("/hati/reset"),
+};
 export default api;

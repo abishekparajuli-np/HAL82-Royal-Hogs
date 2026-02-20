@@ -25,6 +25,9 @@ const Navbar = () => {
             </div>
 
             <div>
+                <Link to="/hati" className="hover:text-[#3B82F6] transition">
+                    🐘 HATI
+                </Link>
                 <Link to="/login">
                     <Button
                         variant="secondary"
