@@ -24,7 +24,56 @@ STRICT: Never exceed 180 words. Be warm, local, and concise.
 
 conversation_history = []
 history_lock = threading.Lock()
+import re
 
+ITINERARY_KEYWORDS = {
+    'itinerary', 'itenary', 'plan', 'places to visit',
+    'day trip', 'tour', 'schedule', 'things to do', 'suggest places'
+}
+
+def is_itinerary_request(message: str) -> bool:
+    msg = message.lower()
+    return any(kw in msg for kw in ITINERARY_KEYWORDS)
+
+
+def extract_places_from_reply(reply: str) -> list:
+    """Extract place names from HATI's numbered/bulleted Must-See list."""
+    places = []
+    for line in reply.splitlines():
+        line = line.strip()
+        match = re.match(r'^[\d\-\*•]+[.)]\s+(.+)', line)
+        if match:
+            name = ' '.join(match.group(1).split()[:5]).strip('–:,-')
+            if name:
+                places.append(name)
+    return places[:4]
+
+
+def chat_with_hati_rich(message: str) -> dict:
+    """
+    Returns { reply: str, images: {place_name: [url]} }
+    Images are only fetched for itinerary-type requests.
+    """
+    reply = chat_with_hati(message)
+
+    images = {}
+    if is_itinerary_request(message):
+        places = extract_places_from_reply(reply)
+        lock = threading.Lock()
+
+        def _fetch(place):
+            urls = fetch_images(place, count=4)
+            if urls:
+                with lock:
+                    images[place] = urls
+
+        threads = [threading.Thread(target=_fetch, args=(p,)) for p in places]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=8)
+
+    return {'reply': reply, 'images': images}
 
 def init_app(app):
     global client, WEATHER_API_KEY
