@@ -105,8 +105,8 @@ const Navbar = () => {
 
             {/* Nav links */}
             <div className="flex items-center gap-8">
-                {navLink("/hati", "Travel Buddy", "🏔️")}
-                {navLink("/plan", "Plan Trip", "🗺️")}
+                {navLink("/hati", "Travel Buddy")}
+                {navLink("/plan", "Plan Trip")}
             </div>
 
             {/* Auth section */}
