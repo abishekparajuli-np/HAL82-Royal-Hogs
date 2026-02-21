@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import logo from "../assets/logo.png"
 
 const _fl = document.createElement("link");
 _fl.rel = "stylesheet";
@@ -10,7 +9,7 @@ const _st = document.createElement("style");
 _st.textContent = `
   :root {
     --ivory:#F9F3E8;--ivory-deep:#F0E6D0;--ivory-subtle:#EDE0C8;
-    --red:#9B2335;--red-soft:#C4445A;--red-dark:#7D1C2B;
+    --red:#9B2335;--red-soft:#C4445A;
     --gold:#B8892A;--gold-light:#D4A84B;
     --brown:#2A1608;--brown-mid:#6B3D1E;--brown-soft:#9C6840;
     --ink:#2A1608;--muted:rgba(61,32,16,0.45);
@@ -18,15 +17,16 @@ _st.textContent = `
     --shadow-sm:0 1px 4px rgba(61,32,16,0.07);
     --shadow-md:0 4px 20px rgba(61,32,16,0.10);
     --shadow-lg:0 8px 48px rgba(61,32,16,0.14);
+    --green:#22863a;
+    --blue:#1a6b9a;
+    --purple:#6b3d9a;
   }
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
   @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
   @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(184,137,42,0.2)}50%{box-shadow:0 0 22px rgba(184,137,42,0.45)}}
   @keyframes dotPulse{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.4);opacity:1}}
   @keyframes breathe{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(184,137,42,0.4)}50%{transform:scale(1.04);box-shadow:0 0 0 12px rgba(184,137,42,0)}}
-  @keyframes shimmerIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
   body{background:var(--ivory);color:var(--ink);font-family:'Crimson Pro',Georgia,serif;line-height:1.65;}
@@ -45,32 +45,131 @@ document.head.appendChild(_st);
 
 const GRAIN = `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E")`;
 
-// ─── localStorage persistence (synchronous, survives SPA navigation + refresh) ─
-const KEY = "hati-v2";
-
+const KEY = "hati-v3";
 function persist(state) {
     try {
         const s = { ...state };
-        // Sets → arrays for JSON
         if (s.included) s.included = Object.fromEntries(Object.entries(s.included).map(([k, v]) => [k, [...(v || [])]]));
         localStorage.setItem(KEY, JSON.stringify(s));
     } catch (_) { }
 }
-
 function hydrate() {
     try {
-        const raw = localStorage.getItem(KEY);
-        if (!raw) return null;
+        const raw = localStorage.getItem(KEY); if (!raw) return null;
         const s = JSON.parse(raw);
-        // arrays → Sets
         if (s.included) s.included = Object.fromEntries(Object.entries(s.included).map(([k, v]) => [k, new Set(v)]));
         return s;
     } catch (_) { return null; }
 }
-
 function wipe() { try { localStorage.removeItem(KEY); } catch (_) { } }
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
+const fmt = n => `NPR ${Number(n).toLocaleString()}`;
+const byTime = a => [...a].sort((x, y) => ({ morning: 0, afternoon: 1, evening: 2 }[x.timeSlot] || 1) - ({ morning: 0, afternoon: 1, evening: 2 }[y.timeSlot] || 1));
+
+// ─── CONTACTS + RATE DATA ─────────────────────────────────────────────────────
+const CONTACTS = {
+    Kathmandu: {
+        hotels: [
+            { name: "Hotel Yak & Yeti", stars: 5, area: "Durbarmarg", phone: "+977-1-4248999", whatsapp: "+9779851049999", note: "Landmark luxury, garden pool", ratePerNight: 18000 },
+            { name: "Hyatt Regency Kathmandu", stars: 5, area: "Boudha", phone: "+977-1-4491234", whatsapp: "+9779841234567", note: "Near Boudhanath Stupa", ratePerNight: 22000 },
+            { name: "Hotel Shanker", stars: 4, area: "Lazimpat", phone: "+977-1-4410151", whatsapp: "+9779851087654", note: "Restored Rana palace, gorgeous garden", ratePerNight: 9500 },
+            { name: "Kathmandu Guest House", stars: 3, area: "Thamel", phone: "+977-1-4700632", whatsapp: "+9779851023456", note: "Historic backpacker HQ, great location", ratePerNight: 3500 },
+        ],
+        guides: [
+            { name: "Ramesh Shrestha", lang: "EN/DE/FR", phone: "+977-9841-123456", whatsapp: "+9779841123456", specialty: "UNESCO Heritage, Temple trails", rating: "★4.9", exp: "18 yrs", ratePerDay: 3500 },
+            { name: "Sita Tamang", lang: "EN/CN/JA", phone: "+977-9851-234567", whatsapp: "+9779851234567", specialty: "Cultural immersion, Newari cuisine", rating: "★4.8", exp: "12 yrs", ratePerDay: 3000 },
+            { name: "Bikash Gurung", lang: "EN/ES", phone: "+977-9841-345678", whatsapp: "+9779841345678", specialty: "Photography walks, Hidden courtyards", rating: "★4.7", exp: "9 yrs", ratePerDay: 2500 },
+        ]
+    },
+    Lalitpur: {
+        hotels: [
+            { name: "Inn Patan", stars: 4, area: "Patan Durbar", phone: "+977-1-5522000", whatsapp: "+9779851056789", note: "Boutique, rooftop Durbar views", ratePerNight: 8000 },
+            { name: "Summit Hotel", stars: 4, area: "Kopundol", phone: "+977-1-5521810", whatsapp: "+9779841567890", note: "Himalayan panoramas, gardens", ratePerNight: 7500 },
+            { name: "Café de Patan Guesthouse", stars: 2, area: "Old Town", phone: "+977-1-5527994", whatsapp: "+9779841890123", note: "Budget gem inside heritage zone", ratePerNight: 2200 },
+        ],
+        guides: [
+            { name: "Anita Maharjan", lang: "EN/IT", phone: "+977-9851-456789", whatsapp: "+9779851456789", specialty: "Newari art, Bronze casting, Durbar walks", rating: "★4.9", exp: "14 yrs", ratePerDay: 3200 },
+            { name: "Roshan Sthapit", lang: "EN/FR", phone: "+977-9841-567890", whatsapp: "+9779841567890", specialty: "Artisan workshops, Museum deep dives", rating: "★4.8", exp: "11 yrs", ratePerDay: 2800 },
+        ]
+    },
+    Bhaktapur: {
+        hotels: [
+            { name: "Shiva Guesthouse", stars: 3, area: "Durbar Square", phone: "+977-1-6612547", whatsapp: "+9779851012345", note: "Best square view in Bhaktapur", ratePerNight: 3800 },
+            { name: "Pagoda Guest House", stars: 3, area: "Taumadhi Tole", phone: "+977-1-6613248", whatsapp: "+9779841098765", note: "Walking distance to Nyatapola", ratePerNight: 3200 },
+            { name: "Bhadgaon Guest House", stars: 2, area: "Old Town", phone: "+977-1-6610488", whatsapp: "+9779851543210", note: "Authentic family-run, courtyard", ratePerNight: 2000 },
+        ],
+        guides: [
+            { name: "Prakash Rajbhandari", lang: "EN/DE", phone: "+977-9841-678901", whatsapp: "+9779841678901", specialty: "Pottery, woodcarving, Jatras festivals", rating: "★4.9", exp: "20 yrs", ratePerDay: 3500 },
+            { name: "Deepa Shrestha", lang: "EN/JA", phone: "+977-9851-789012", whatsapp: "+9779851789012", specialty: "Newari cuisine, temple iconography", rating: "★4.7", exp: "8 yrs", ratePerDay: 2500 },
+        ]
+    },
+    Kaski: {
+        hotels: [
+            { name: "Temple Tree Resort", stars: 5, area: "Lakeside", phone: "+977-61-462970", whatsapp: "+9779851901234", note: "Award-winning, lake & mountain views", ratePerNight: 16000 },
+            { name: "Fish Tail Lodge", stars: 5, area: "Phewa Lake", phone: "+977-61-465071", whatsapp: "+9779841234890", note: "Reached by rowboat — utterly romantic", ratePerNight: 20000 },
+            { name: "Hotel Middle Path", stars: 3, area: "Lakeside-6", phone: "+977-61-461000", whatsapp: "+9779851345901", note: "Great value, 2 min from the lake", ratePerNight: 4000 },
+            { name: "Butterfly Lodge", stars: 2, area: "Damside", phone: "+977-61-520144", whatsapp: "+9779841456012", note: "Budget favourite, garden seating", ratePerNight: 1800 },
+        ],
+        guides: [
+            { name: "Karma Gurung", lang: "EN/ES/PT", phone: "+977-9856-111222", whatsapp: "+9779856111222", specialty: "Paragliding liaison, Sarangkot trekking", rating: "★5.0", exp: "15 yrs", ratePerDay: 4000 },
+            { name: "Laxmi Thapa", lang: "EN/FR", phone: "+977-9846-333444", whatsapp: "+9779846333444", specialty: "Lake excursions, Begnas Valley day trips", rating: "★4.8", exp: "10 yrs", ratePerDay: 3200 },
+            { name: "Dipak Pun", lang: "EN/ZH", phone: "+977-9856-555666", whatsapp: "+9779856555666", specialty: "Annapurna circuit logistics, gear advice", rating: "★4.9", exp: "17 yrs", ratePerDay: 3800 },
+        ]
+    },
+    Chitwan: {
+        hotels: [
+            { name: "Meghauli Serai (Taj)", stars: 5, area: "Buffer Zone", phone: "+977-56-580030", whatsapp: "+9779851234001", note: "Luxury tented camp, rhinos at dusk", ratePerNight: 25000 },
+            { name: "Barahi Jungle Lodge", stars: 4, area: "Sauraha", phone: "+977-56-580014", whatsapp: "+9779841234002", note: "Riverbank location, excellent safari", ratePerNight: 9000 },
+            { name: "Parkside Tharu Lodge", stars: 2, area: "Sauraha Center", phone: "+977-56-580128", whatsapp: "+9779841234004", note: "Local family-run, Tharu meals", ratePerNight: 2500 },
+        ],
+        guides: [
+            { name: "Bijay Tharu", lang: "EN/HI", phone: "+977-9845-112233", whatsapp: "+9779845112233", specialty: "Jungle jeep & walking safaris, birding", rating: "★4.9", exp: "16 yrs", ratePerDay: 3500 },
+            { name: "Sunita Chaudhary", lang: "EN/ES", phone: "+977-9855-223344", whatsapp: "+9779855223344", specialty: "Tharu culture, canoe safaris, cooking", rating: "★4.7", exp: "9 yrs", ratePerDay: 2800 },
+        ]
+    },
+    Solukhumbu: {
+        hotels: [
+            { name: "Everest Summit Lodge", stars: 4, area: "Namche Bazaar", phone: "+977-38-540087", whatsapp: "+9779851877001", note: "Best Ama Dablam views in Namche", ratePerNight: 5500 },
+            { name: "Hotel Namche", stars: 3, area: "Namche Bazaar", phone: "+977-38-540045", whatsapp: "+9779841877002", note: "Central, good acclimatisation base", ratePerNight: 3200 },
+            { name: "Tengboche Teahouse", stars: 1, area: "Tengboche 3867m", phone: "+977-9843-567890", whatsapp: "+9779843567890", note: "Simple, monastery next door", ratePerNight: 1200 },
+        ],
+        guides: [
+            { name: "Dawa Sherpa", lang: "EN/ZH/JA", phone: "+977-9843-112233", whatsapp: "+9779843112233", specialty: "EBC & Gokyo treks, high-altitude safety", rating: "★5.0", exp: "22 yrs", ratePerDay: 5000 },
+            { name: "Nima Sherpa", lang: "EN/DE", phone: "+977-9848-334455", whatsapp: "+9779848334455", specialty: "Island Peak, Lobuche climbing permits", rating: "★4.9", exp: "18 yrs", ratePerDay: 4500 },
+            { name: "Pasang Kami", lang: "EN/FR/IT", phone: "+977-9843-556677", whatsapp: "+9779843556677", specialty: "Photography expeditions, monastery treks", rating: "★4.8", exp: "14 yrs", ratePerDay: 4000 },
+        ]
+    },
+    Mustang: {
+        hotels: [
+            { name: "Mustang Holiday Inn", stars: 3, area: "Lo Manthang", phone: "+977-69-440000", whatsapp: "+9779851990011", note: "Best option inside the walled city", ratePerNight: 4500 },
+            { name: "Hotel Bob Marley", stars: 2, area: "Jomsom", phone: "+977-69-440013", whatsapp: "+9779841990022", note: "Famous among trekkers, quirky & warm", ratePerNight: 2000 },
+            { name: "Snow Land Hotel", stars: 2, area: "Kagbeni", phone: "+977-69-440025", whatsapp: "+9779851990033", note: "Gateway to Upper Mustang, cozy", ratePerNight: 1800 },
+        ],
+        guides: [
+            { name: "Tenzin Bista", lang: "EN/TI", phone: "+977-9847-778899", whatsapp: "+9779847778899", specialty: "Upper Mustang permits, Lo-pa culture", rating: "★5.0", exp: "19 yrs", ratePerDay: 5500 },
+            { name: "Sonam Gurung", lang: "EN/ZH", phone: "+977-9847-889900", whatsapp: "+9779847889900", specialty: "Cave archaeology, Mustang plateau trekking", rating: "★4.9", exp: "13 yrs", ratePerDay: 4800 },
+        ]
+    },
+    Banke: {
+        hotels: [
+            { name: "Tiger Tops Bardia", stars: 4, area: "Buffer Zone", phone: "+977-1-4361500", whatsapp: "+9779851606060", note: "Eco-lodge, tiger sighting record", ratePerNight: 12000 },
+            { name: "Jungle Base Camp Lodge", stars: 3, area: "Thakurdwara", phone: "+977-81-410500", whatsapp: "+9779851505050", note: "Main lodge for Bardia park access", ratePerNight: 5000 },
+            { name: "Bardia Riverside Resort", stars: 3, area: "Thakurdwara", phone: "+977-81-411020", whatsapp: "+9779841707070", note: "Riverside tents, great food", ratePerNight: 4200 },
+        ],
+        guides: [
+            { name: "Ram Bahadur Rana", lang: "EN/HI/NE", phone: "+977-9858-334455", whatsapp: "+9779858334455", specialty: "Tiger tracking, rhino & elephant safaris", rating: "★5.0", exp: "21 yrs", ratePerDay: 4000 },
+            { name: "Ganga Chaudhary", lang: "EN/HI", phone: "+977-9858-445566", whatsapp: "+9779858445566", specialty: "Babai River rafting, Tharu village walks", rating: "★4.8", exp: "12 yrs", ratePerDay: 3200 },
+        ]
+    },
+};
+
+const EMERGENCY = [
+    { label: "Nepal Police", num: "100" },
+    { label: "Tourist Police", num: "1144" },
+    { label: "Ambulance", num: "102" },
+    { label: "CIWEC Clinic", num: "+977-1-4435232" },
+];
+
 const ACTIVITIES = [
     { id: "k1", name: "Boudhanath Stupa Kora", cost: 500, rating: 93, cat: "Culture", district: "Kathmandu", timeSlot: "evening", tip: "Go at dusk — butter lamps lit, pilgrims spinning prayer wheels.", dur: 2 },
     { id: "k2", name: "Pashupatinath Aarti Ceremony", cost: 1000, rating: 94, cat: "Culture", district: "Kathmandu", timeSlot: "evening", tip: "Arrive by 5 PM for a front-row spot on the eastern bank.", dur: 2 },
@@ -124,7 +223,6 @@ const DM = {
     Banke: { label: "Bardia", emoji: "🐯", tagline: "Wild West Nepal", region: "Terai", season: "Oct–Mar", temp: "18–30°C" },
 };
 
-// ─── KNAPSACK ─────────────────────────────────────────────────────────────────
 function knapsack(budget, items) {
     if (!items.length || budget <= 0) return [];
     const S = 50, W = Math.floor(budget / S), n = items.length;
@@ -139,19 +237,12 @@ function knapsack(budget, items) {
     return sel;
 }
 
-const fmt = n => `NPR ${Number(n).toLocaleString()}`;
-const byTime = a => [...a].sort((x, y) => ({ morning: 0, afternoon: 1, evening: 2 }[x.timeSlot] || 1) - ({ morning: 0, afternoon: 1, evening: 2 }[y.timeSlot] || 1));
-
-// ─── SHARED UI ────────────────────────────────────────────────────────────────
+// ─── SHARED COMPONENTS ────────────────────────────────────────────────────────
 function Bubble({ text, from = "hati", typing = false }) {
     const isH = from === "hati";
     return (
         <div style={{ display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 10, flexDirection: isH ? "row" : "row-reverse", animation: "slideUp .25s ease both" }}>
-            {isH && <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,var(--red),var(--gold))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}><img
-                src={logo}
-                alt="Hati Logo"
-                className="w-full h-full object-contain rounded-lg"
-            /></div>}
+            {isH && <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,var(--red),var(--gold))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🐘</div>}
             <div style={{ maxWidth: "84%", padding: "10px 14px", borderRadius: isH ? "4px 12px 12px 12px" : "12px 4px 12px 12px", background: isH ? "white" : "var(--ivory-deep)", border: "1px solid var(--border)", fontFamily: "'Crimson Pro',serif", fontSize: 13.5, lineHeight: 1.7, color: "var(--brown-mid)", whiteSpace: "pre-wrap", boxShadow: "var(--shadow-sm)" }}>
                 {typing ? <span style={{ animation: "pulse 1s infinite", letterSpacing: 4, color: "var(--gold)" }}>● ● ●</span> : text}
             </div>
@@ -168,7 +259,7 @@ function ActCard({ act, included, onToggle, canAfford }) {
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 5 }}>
                     <span style={{ fontSize: 10, color: "var(--muted)" }}>{{ morning: "🌅", afternoon: "☀️", evening: "🌙" }[act.timeSlot]} {act.timeSlot}</span>
                     <span className="badge" style={{ fontSize: 9 }}>{act.cat}</span>
-                    <span style={{ fontSize: 10, fontWeight: 600, color: act.cost === 0 ? "#22863a" : "var(--gold)" }}>{act.cost === 0 ? "Free" : fmt(act.cost)}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: act.cost === 0 ? "var(--green)" : "var(--gold)" }}>{act.cost === 0 ? "Free" : fmt(act.cost)}</span>
                     {act.dur && <span style={{ fontSize: 10, color: "var(--muted)" }}>~{act.dur}h</span>}
                     <span style={{ fontSize: 10, color: "var(--brown-soft)" }}>★{act.rating}</span>
                 </div>
@@ -182,7 +273,195 @@ function ActCard({ act, included, onToggle, canAfford }) {
     );
 }
 
-// ─── INTRO CHAT ───────────────────────────────────────────────────────────────
+// ─── CONTACTS + FINANCE PANEL ─────────────────────────────────────────────────
+function ContactsFinancePanel({ district, dpd, stayExpenses, setStayExpenses, guideExpenses, setGuideExpenses }) {
+    const C = CONTACTS[district];
+    const [view, setView] = useState("hotel");
+    if (!C) return null;
+
+    const curStay = stayExpenses[district] || { hotelName: "", nights: dpd, ratePerNight: 0, totalCost: 0, locked: false };
+    const curGuide = guideExpenses[district] || { guideName: "", days: dpd, ratePerDay: 0, totalCost: 0, locked: false };
+
+    const saveStay = patch => {
+        const n = { ...curStay, ...patch };
+        n.totalCost = n.nights * n.ratePerNight;
+        setStayExpenses(p => ({ ...p, [district]: n }));
+    };
+    const saveGuide = patch => {
+        const n = { ...curGuide, ...patch };
+        n.totalCost = n.days * n.ratePerDay;
+        setGuideExpenses(p => ({ ...p, [district]: n }));
+    };
+
+    const CTABS = [{ k: "hotel", l: "🏨 Hotels" }, { k: "guide", l: "🧭 Guides" }, { k: "sos", l: "🆘 SOS" }];
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, animation: "slideUp .25s ease both" }}>
+
+            {/* ── Live cost summary cards ── */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                    { label: "🏨 ACCOMMODATION", val: curStay.totalCost, sub: curStay.hotelName ? `${curStay.nights} nights × ${fmt(curStay.ratePerNight)}` : "Not selected", color: "var(--blue)", bg: "rgba(26,107,154,0.07)", border: "rgba(26,107,154,0.25)", locked: curStay.locked },
+                    { label: "🧭 GUIDE FEE", val: curGuide.totalCost, sub: curGuide.guideName ? `${curGuide.days} days × ${fmt(curGuide.ratePerDay)}` : "Not selected", color: "var(--purple)", bg: "rgba(107,61,154,0.07)", border: "rgba(107,61,154,0.25)", locked: curGuide.locked },
+                ].map(row => (
+                    <div key={row.label} style={{ padding: "12px 13px", borderRadius: 10, background: row.val > 0 ? row.bg : "var(--ivory-subtle)", border: `1px solid ${row.val > 0 ? row.border : "var(--border-soft)"}`, position: "relative" }}>
+                        <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "1.5px", color: row.color, marginBottom: 5 }}>{row.label}</div>
+                        <div style={{ fontFamily: "Cinzel", fontSize: row.val > 0 ? 18 : 13, color: row.val > 0 ? row.color : "var(--muted)" }}>{row.val > 0 ? fmt(row.val) : "—"}</div>
+                        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)", marginTop: 2, fontStyle: "italic" }}>{row.sub}</div>
+                        {row.locked && <div style={{ position: "absolute", top: 8, right: 8, fontSize: 11 }}>🔒</div>}
+                    </div>
+                ))}
+            </div>
+
+            {/* ── Tab nav ── */}
+            <div style={{ display: "flex", gap: 6 }}>
+                {CTABS.map(t => (
+                    <button key={t.k} onClick={() => setView(t.k)} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `1.5px solid ${view === t.k ? "var(--gold)" : "var(--border)"}`, background: view === t.k ? "var(--ivory-deep)" : "white", color: view === t.k ? "var(--gold)" : "var(--brown-mid)", fontFamily: "Cinzel", fontSize: 9, letterSpacing: "0.5px" }}>
+                        {t.l}
+                    </button>
+                ))}
+            </div>
+
+            {/* ── HOTEL TAB ── */}
+            {view === "hotel" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {C.hotels.map((h, i) => {
+                        const sel = curStay.hotelName === h.name;
+                        return (
+                            <div key={i} style={{ borderRadius: 10, padding: "12px 13px", background: sel ? "rgba(26,107,154,0.06)" : "white", border: `1.5px solid ${sel ? "rgba(26,107,154,0.4)" : "var(--border)"}`, boxShadow: "var(--shadow-sm)" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                                    <div>
+                                        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{h.name}</div>
+                                        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)" }}>{"★".repeat(h.stars)}{"☆".repeat(5 - h.stars)} · {h.area}</div>
+                                    </div>
+                                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                        <div style={{ fontFamily: "Cinzel", fontSize: 13, color: "var(--blue)" }}>{fmt(h.ratePerNight)}</div>
+                                        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: "var(--muted)" }}>/ night</div>
+                                    </div>
+                                </div>
+                                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--brown-soft)", fontStyle: "italic", borderLeft: "2px solid var(--border)", paddingLeft: 8, marginBottom: 10 }}>{h.note}</div>
+                                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--brown-mid)", marginBottom: 8 }}>📞 <a href={`tel:${h.phone}`} style={{ color: "var(--brown-mid)", textDecoration: "none", fontWeight: 600 }}>{h.phone}</a></div>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                    <button onClick={() => { if (!curStay.locked) saveStay({ hotelName: h.name, ratePerNight: h.ratePerNight, nights: dpd, totalCost: dpd * h.ratePerNight, locked: false }); }}
+                                        style={{ flex: 2, padding: "7px", borderRadius: 7, border: `1.5px solid ${sel ? "rgba(26,107,154,0.6)" : "var(--border)"}`, background: sel ? "rgba(26,107,154,0.1)" : "var(--ivory-deep)", color: sel ? "var(--blue)" : "var(--brown-mid)", fontFamily: "Cinzel", fontSize: 9 }}>
+                                        {sel ? "✓ TRACKING COST" : "SELECT & TRACK"}
+                                    </button>
+                                    <a href={`tel:${h.phone}`} style={{ textDecoration: "none", flex: 1 }}><button style={{ width: "100%", padding: "7px", borderRadius: 7, border: "1.5px solid var(--green)", background: "white", color: "var(--green)", fontFamily: "Cinzel", fontSize: 9 }}>📞 Call</button></a>
+                                    <a href={`https://wa.me/${h.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", flex: 1 }}><button style={{ width: "100%", padding: "7px", borderRadius: 7, border: "1.5px solid #25D366", background: "white", color: "#128C7E", fontFamily: "Cinzel", fontSize: 9 }}>💬 WA</button></a>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {curStay.hotelName && (
+                        <div style={{ padding: "14px", borderRadius: 10, background: "rgba(26,107,154,0.05)", border: "1px solid rgba(26,107,154,0.2)" }}>
+                            <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "1.5px", color: "var(--blue)", marginBottom: 12 }}>✏️ ADJUST ACCOMMODATION COST</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                                <div>
+                                    <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Nights</div>
+                                    <input type="number" min={1} value={curStay.nights} disabled={curStay.locked} onChange={e => saveStay({ nights: Math.max(1, +e.target.value) })} style={{ textAlign: "center", fontFamily: "Cinzel", fontSize: 14, color: "var(--blue)" }} />
+                                </div>
+                                <div>
+                                    <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Rate / night (NPR)</div>
+                                    <input type="number" min={0} value={curStay.ratePerNight} disabled={curStay.locked} onChange={e => saveStay({ ratePerNight: Math.max(0, +e.target.value) })} style={{ textAlign: "center", fontFamily: "Cinzel", fontSize: 14, color: "var(--blue)" }} />
+                                </div>
+                            </div>
+                            <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(26,107,154,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                                <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 12, color: "var(--brown-mid)" }}>Total accommodation</span>
+                                <span style={{ fontFamily: "Cinzel", fontSize: 17, color: "var(--blue)" }}>{fmt(curStay.totalCost)}</span>
+                            </div>
+                            <div style={{ display: "flex", gap: 8 }}>
+                                {!curStay.locked
+                                    ? <button onClick={() => saveStay({ locked: true })} style={{ flex: 1, padding: "8px", borderRadius: 8, border: "none", background: "var(--blue)", color: "white", fontFamily: "Cinzel", fontSize: 9, letterSpacing: "1px" }}>🔒 LOCK COST</button>
+                                    : <button onClick={() => saveStay({ locked: false })} style={{ flex: 1, padding: "8px", borderRadius: 8, border: "1.5px solid var(--blue)", background: "white", color: "var(--blue)", fontFamily: "Cinzel", fontSize: 9, letterSpacing: "1px" }}>✏️ EDIT</button>
+                                }
+                                <button onClick={() => setStayExpenses(p => ({ ...p, [district]: null }))} style={{ padding: "8px 14px", borderRadius: 8, border: "1.5px solid var(--border)", background: "white", color: "var(--muted)", fontFamily: "Cinzel", fontSize: 9 }}>Clear</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── GUIDE TAB ── */}
+            {view === "guide" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {C.guides.map((g, i) => {
+                        const sel = curGuide.guideName === g.name;
+                        return (
+                            <div key={i} style={{ borderRadius: 10, padding: "12px 13px", background: sel ? "rgba(107,61,154,0.06)" : "white", border: `1.5px solid ${sel ? "rgba(107,61,154,0.4)" : "var(--border)"}`, boxShadow: "var(--shadow-sm)" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+                                    <div>
+                                        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>{g.name}</div>
+                                        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)" }}>{g.rating} · {g.exp} · {g.lang}</div>
+                                    </div>
+                                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                        <div style={{ fontFamily: "Cinzel", fontSize: 13, color: "var(--purple)" }}>{fmt(g.ratePerDay)}</div>
+                                        <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: "var(--muted)" }}>/ day</div>
+                                    </div>
+                                </div>
+                                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--brown-soft)", fontStyle: "italic", borderLeft: "2px solid var(--border)", paddingLeft: 8, marginBottom: 10 }}>🧭 {g.specialty}</div>
+                                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--brown-mid)", marginBottom: 8 }}>📞 <a href={`tel:${g.phone}`} style={{ color: "var(--brown-mid)", textDecoration: "none", fontWeight: 600 }}>{g.phone}</a></div>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                    <button onClick={() => { if (!curGuide.locked) saveGuide({ guideName: g.name, ratePerDay: g.ratePerDay, days: dpd, totalCost: dpd * g.ratePerDay, locked: false }); }}
+                                        style={{ flex: 2, padding: "7px", borderRadius: 7, border: `1.5px solid ${sel ? "rgba(107,61,154,0.6)" : "var(--border)"}`, background: sel ? "rgba(107,61,154,0.1)" : "var(--ivory-deep)", color: sel ? "var(--purple)" : "var(--brown-mid)", fontFamily: "Cinzel", fontSize: 9 }}>
+                                        {sel ? "✓ TRACKING COST" : "SELECT & TRACK"}
+                                    </button>
+                                    <a href={`tel:${g.phone}`} style={{ textDecoration: "none", flex: 1 }}><button style={{ width: "100%", padding: "7px", borderRadius: 7, border: "1.5px solid var(--green)", background: "white", color: "var(--green)", fontFamily: "Cinzel", fontSize: 9 }}>📞 Call</button></a>
+                                    <a href={`https://wa.me/${g.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", flex: 1 }}><button style={{ width: "100%", padding: "7px", borderRadius: 7, border: "1.5px solid #25D366", background: "white", color: "#128C7E", fontFamily: "Cinzel", fontSize: 9 }}>💬 WA</button></a>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    {curGuide.guideName && (
+                        <div style={{ padding: "14px", borderRadius: 10, background: "rgba(107,61,154,0.05)", border: "1px solid rgba(107,61,154,0.2)" }}>
+                            <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "1.5px", color: "var(--purple)", marginBottom: 12 }}>✏️ ADJUST GUIDE COST</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                                <div>
+                                    <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Days hired</div>
+                                    <input type="number" min={1} value={curGuide.days} disabled={curGuide.locked} onChange={e => saveGuide({ days: Math.max(1, +e.target.value) })} style={{ textAlign: "center", fontFamily: "Cinzel", fontSize: 14, color: "var(--purple)" }} />
+                                </div>
+                                <div>
+                                    <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Rate / day (NPR)</div>
+                                    <input type="number" min={0} value={curGuide.ratePerDay} disabled={curGuide.locked} onChange={e => saveGuide({ ratePerDay: Math.max(0, +e.target.value) })} style={{ textAlign: "center", fontFamily: "Cinzel", fontSize: 14, color: "var(--purple)" }} />
+                                </div>
+                            </div>
+                            <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(107,61,154,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                                <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 12, color: "var(--brown-mid)" }}>Total guide fee</span>
+                                <span style={{ fontFamily: "Cinzel", fontSize: 17, color: "var(--purple)" }}>{fmt(curGuide.totalCost)}</span>
+                            </div>
+                            <div style={{ display: "flex", gap: 8 }}>
+                                {!curGuide.locked
+                                    ? <button onClick={() => saveGuide({ locked: true })} style={{ flex: 1, padding: "8px", borderRadius: 8, border: "none", background: "var(--purple)", color: "white", fontFamily: "Cinzel", fontSize: 9, letterSpacing: "1px" }}>🔒 LOCK COST</button>
+                                    : <button onClick={() => saveGuide({ locked: false })} style={{ flex: 1, padding: "8px", borderRadius: 8, border: "1.5px solid var(--purple)", background: "white", color: "var(--purple)", fontFamily: "Cinzel", fontSize: 9, letterSpacing: "1px" }}>✏️ EDIT</button>
+                                }
+                                <button onClick={() => setGuideExpenses(p => ({ ...p, [district]: null }))} style={{ padding: "8px 14px", borderRadius: 8, border: "1.5px solid var(--border)", background: "white", color: "var(--muted)", fontFamily: "Cinzel", fontSize: 9 }}>Clear</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── SOS TAB ── */}
+            {view === "sos" && (
+                <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(155,35,53,0.04)", border: "1px solid rgba(155,35,53,0.18)" }}>
+                    <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "1.5px", color: "var(--red)", marginBottom: 12 }}>EMERGENCY CONTACTS · NEPAL</div>
+                    {EMERGENCY.map(e => (
+                        <a key={e.label} href={`tel:${e.num}`} style={{ textDecoration: "none" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border-soft)" }}>
+                                <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 13, color: "var(--brown-mid)" }}>{e.label}</span>
+                                <span style={{ fontFamily: "Cinzel", fontSize: 13, color: "var(--red)", fontWeight: 600 }}>{e.num} 📞</span>
+                            </div>
+                        </a>
+                    ))}
+                    <div style={{ marginTop: 10, fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--muted)", fontStyle: "italic" }}>Tap any number to call. Tourist Police (1144) speaks English.</div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── INTRO ────────────────────────────────────────────────────────────────────
 function IntroChatScreen({ onStart }) {
     const [msgs, setMsgs] = useState([]);
     const [nameInput, setNameInput] = useState("");
@@ -223,19 +502,10 @@ function IntroChatScreen({ onStart }) {
             <div style={{ position: "fixed", bottom: "-10%", left: "-5%", width: 380, height: 380, borderRadius: "50%", background: "radial-gradient(circle,rgba(155,35,53,0.06) 0%,transparent 70%)", pointerEvents: "none" }} />
             <div style={{ width: "100%", maxWidth: 520, position: "relative", zIndex: 1, display: "flex", flexDirection: "column", gap: "2rem" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, animation: "slideUp .6s ease both" }}>
-                    <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg,var(--red),var(--gold))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, boxShadow: "0 4px 24px rgba(155,35,53,0.25)", animation: "breathe 3s ease-in-out infinite" }}><img
-                        src={logo}
-                        alt="Hati Logo"
-                        className="w-full h-full object-contain rounded-lg"
-                    /></div>
+                    <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg,var(--red),var(--gold))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, boxShadow: "0 4px 24px rgba(155,35,53,0.25)", animation: "breathe 3s ease-in-out infinite" }}>🐘</div>
                     <div style={{ textAlign: "center" }}>
                         <div style={{ fontFamily: "'Tiro Devanagari Sanskrit',serif", fontSize: 28, letterSpacing: 6, background: "linear-gradient(135deg,var(--brown),var(--gold))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>HATI</div>
                         <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: "var(--muted)", marginTop: 2 }}>Nepal Travel Companion</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
-                        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg,transparent,var(--border))" }} />
-                        <span style={{ color: "var(--gold)", fontSize: 12, opacity: 0.7 }}>❈</span>
-                        <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg,var(--border),transparent)" }} />
                     </div>
                 </div>
                 <div style={{ background: "white", borderRadius: 20, border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)", overflow: "hidden", animation: "slideUp .6s .1s ease both", opacity: 0, animationFillMode: "both" }}>
@@ -262,7 +532,7 @@ function IntroChatScreen({ onStart }) {
     );
 }
 
-// ─── SETUP SCREEN ─────────────────────────────────────────────────────────────
+// ─── SETUP ────────────────────────────────────────────────────────────────────
 function SetupScreen({ name, onDone }) {
     const [days, setDays] = useState(7);
     const [budget, setBudget] = useState(50000);
@@ -346,56 +616,25 @@ function SetupScreen({ name, onDone }) {
     );
 }
 
-// ─── CHAT PANE ────────────────────────────────────────────────────────────────
-const QA = {
-    "Best time to visit?": "October–November and March–April are peak season — crystal skies, perfect temperatures, rhododendrons in bloom. June–August is monsoon: lush but rainy every afternoon.",
-    "Is it safe solo?": "Nepal is genuinely one of the safest countries for solo travel. Locals are remarkably welcoming. Violent crime against tourists is extremely rare.",
-    "Local food to try?": "Must-try: dal bhat (always unlimited refills!), momos, sel-roti, juju dhau (Bhaktapur's king yoghurt), thukpa, and chiya (spiced milk tea).",
-    "How to get around?": "Within cities: microbuses and taxis are cheap. Kathmandu–Pokhara: 25 min flight or 6-7hr scenic bus. For the mountains: tiny Twin Otter planes fly to Lukla — book early!",
-    "What to pack?": "Layers are everything. Comfortable walking shoes (cobblestones everywhere). Light rain jacket, sunscreen, lip balm. Modest clothes for temples.",
-};
-
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+const QA = { "Best time to visit?": "October–November and March–April are peak season — crystal skies, perfect temperatures, rhododendrons in bloom. June–August is monsoon: lush but rainy every afternoon.", "Is it safe solo?": "Nepal is genuinely one of the safest countries for solo travel. Locals are remarkably welcoming. Violent crime against tourists is extremely rare.", "Local food to try?": "Must-try: dal bhat (always unlimited refills!), momos, sel-roti, juju dhau (Bhaktapur's king yoghurt), thukpa, and chiya (spiced milk tea).", "How to get around?": "Within cities: microbuses and taxis are cheap. Kathmandu–Pokhara: 25 min flight or 6-7hr scenic bus. For the mountains: tiny Twin Otter planes fly to Lukla — book early!", "What to pack?": "Layers are everything. Comfortable walking shoes (cobblestones everywhere). Light rain jacket, sunscreen, lip balm. Modest clothes for temples." };
 function ChatPane({ name, district }) {
     const meta = DM[district] || {};
     const [msgs, setMsgs] = useState([{ from: "hati", text: `नमस्ते ${name} 🙏 How's ${meta.label || "Nepal"} treating you? Ask me anything!` }]);
-    const [input, setInput] = useState("");
-    const [typing, setTyping] = useState(false);
-    const endRef = useRef(null);
+    const [input, setInput] = useState(""); const [typing, setTyping] = useState(false); const endRef = useRef(null);
     useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, typing]);
-    function send(text) {
-        if (!text.trim()) return;
-        setMsgs(p => [...p, { from: "user", text: text.trim() }]);
-        setInput(""); setTyping(true);
-        setTimeout(() => {
-            const r = QA[text] || (text.toLowerCase().includes("thank") ? `Always a pleasure, ${name}! 🙏` : `Talk to the locals — every chai stall owner has a recommendation you won't find in any guidebook.`);
-            setTyping(false); setMsgs(p => [...p, { from: "hati", text: r }]);
-        }, 700 + Math.random() * 400);
-    }
+    function send(text) { if (!text.trim()) return; setMsgs(p => [...p, { from: "user", text: text.trim() }]); setInput(""); setTyping(true); setTimeout(() => { const r = QA[text] || (text.toLowerCase().includes("thank") ? `Always a pleasure, ${name}! 🙏` : `Talk to the locals — every chai stall owner has a recommendation you won't find in any guidebook.`); setTyping(false); setMsgs(p => [...p, { from: "hati", text: r }]); }, 700 + Math.random() * 400); }
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "55vh" }}>
-            <div style={{ flex: 1, overflowY: "auto", paddingBottom: 6 }}>
-                {msgs.map((m, i) => <Bubble key={i} from={m.from} text={m.text} />)}
-                {typing && <Bubble from="hati" typing />}
-                <div ref={endRef} />
-            </div>
-            <div style={{ margin: "8px 0" }}>
-                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)", marginBottom: 6, letterSpacing: "0.1em", textTransform: "uppercase" }}>Quick questions:</div>
-                <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                    {Object.keys(QA).map(q => <button key={q} onClick={() => send(q)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--ivory-deep)", color: "var(--brown-mid)", fontFamily: "'Crimson Pro',serif", fontSize: 10 }}>{q}</button>)}
-                </div>
-            </div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send(input)} placeholder={`Ask HATI about ${meta.label || "Nepal"}...`} />
-                <button onClick={() => send(input)} style={{ width: 40, height: 40, borderRadius: 8, background: "linear-gradient(135deg,var(--red),var(--gold))", color: "white", fontSize: 15, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>➤</button>
-            </div>
+            <div style={{ flex: 1, overflowY: "auto", paddingBottom: 6 }}>{msgs.map((m, i) => <Bubble key={i} from={m.from} text={m.text} />)}{typing && <Bubble from="hati" typing />}<div ref={endRef} /></div>
+            <div style={{ margin: "8px 0" }}><div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.1em" }}>Quick questions:</div><div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>{Object.keys(QA).map(q => <button key={q} onClick={() => send(q)} style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--ivory-deep)", color: "var(--brown-mid)", fontFamily: "'Crimson Pro',serif", fontSize: 10 }}>{q}</button>)}</div></div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}><input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send(input)} placeholder={`Ask HATI about ${meta.label || "Nepal"}...`} /><button onClick={() => send(input)} style={{ width: 40, height: 40, borderRadius: 8, background: "linear-gradient(135deg,var(--red),var(--gold))", color: "white", fontSize: 15, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}>➤</button></div>
         </div>
     );
 }
 
-// ─── PLANNER SCREEN ───────────────────────────────────────────────────────────
-// State is OWNED BY APP — this component is purely presentational
-// No local state for journey progress = nothing lost on navigation
-function PlannerScreen({ name, days, budget, districts, currentIdx, setCurrentIdx, completed, setCompleted, spentHistory, setSpentHistory, included, setIncluded, customExpenses, setCustomExpenses, onReview, justResumed }) {
+// ─── PLANNER ─────────────────────────────────────────────────────────────────
+function PlannerScreen({ name, days, budget, districts, currentIdx, setCurrentIdx, completed, setCompleted, spentHistory, setSpentHistory, included, setIncluded, customExpenses, setCustomExpenses, stayExpenses, setStayExpenses, guideExpenses, setGuideExpenses, onReview, justResumed }) {
     const [customLabel, setCustomLabel] = useState("");
     const [customAmount, setCustomAmount] = useState("");
     const [tab, setTab] = useState("activities");
@@ -408,63 +647,68 @@ function PlannerScreen({ name, days, budget, districts, currentIdx, setCurrentId
     const alreadySpent = spentHistory.reduce((s, h) => s + h.total, 0);
     const bdPerD = Math.floor(Math.max(0, budget - alreadySpent) / Math.max(1, districts.length - spentHistory.length));
 
-    // Knapsack init for unseen districts
-    useEffect(() => {
-        if (!cur) return;
-        const pool = ACTIVITIES.filter(a => a.district === cur);
-        const ks = knapsack(bdPerD, pool);
-        setIncluded(p => p[cur] !== undefined ? p : { ...p, [cur]: new Set(ks.map(a => a.id)) });
-    }, [cur, bdPerD]);
+    useEffect(() => { if (!cur) return; const pool = ACTIVITIES.filter(a => a.district === cur); const ks = knapsack(bdPerD, pool); setIncluded(p => p[cur] !== undefined ? p : { ...p, [cur]: new Set(ks.map(a => a.id)) }); }, [cur, bdPerD]);
 
     const curIncluded = included[cur] || new Set();
     const allPool = cur ? [...ACTIVITIES.filter(a => a.district === cur), ...MISC] : [];
     const includedList = allPool.filter(a => curIncluded.has(a.id));
     const actTotal = includedList.reduce((s, a) => s + a.cost, 0);
     const customTotal = (customExpenses[cur] || []).reduce((s, e) => s + e.amount, 0);
-    const distTotal = actTotal + customTotal;
+    const stayTotal = stayExpenses[cur]?.totalCost || 0;
+    const guideCostTotal = guideExpenses[cur]?.totalCost || 0;
+    const distTotal = actTotal + customTotal + stayTotal + guideCostTotal;
     const overBudget = distTotal > bdPerD;
-    const budgetPct = Math.min(100, distTotal / bdPerD * 100);
+
+    // Stacked bar segments
+    const segs = [
+        { val: actTotal, color: "var(--gold)", label: "Activities" },
+        { val: stayTotal, color: "var(--blue)", label: "Hotel" },
+        { val: guideCostTotal, color: "var(--purple)", label: "Guide" },
+        { val: customTotal, color: "var(--brown-soft)", label: "Other" },
+    ];
+    const pct = v => Math.min(100, bdPerD > 0 ? (v / bdPerD) * 100 : 0);
 
     function toggle(act) { setIncluded(p => { const s = new Set(p[cur] || []); s.has(act.id) ? s.delete(act.id) : s.add(act.id); return { ...p, [cur]: s }; }); }
 
     function completeDistrict() {
-        const hist = { district: cur, total: distTotal, allowance: bdPerD, actTotal, custom: customExpenses[cur] || [] };
-        const newCompleted = [...completed, cur];
-        const newHistory = [...spentHistory, hist];
-        setCompleted(newCompleted);
-        setSpentHistory(newHistory);
+        const hist = { district: cur, total: distTotal, allowance: bdPerD, actTotal, stayTotal, guideCostTotal, customTotal, hotelName: stayExpenses[cur]?.hotelName || "", guideName: guideExpenses[cur]?.guideName || "" };
+        const nc = [...completed, cur], nh = [...spentHistory, hist];
+        setCompleted(nc); setSpentHistory(nh);
         if (currentIdx < districts.length - 1) { setCurrentIdx(i => i + 1); setTab("activities"); }
-        else onReview(newHistory, newCompleted);
+        else onReview(nh, nc);
     }
+
+    const TABS = [{ key: "activities", label: "🎭 Planned" }, { key: "misc", label: "✦ Add-Ons" }, { key: "contacts", label: "🏨 Stay & Guide" }, { key: "chat", label: "🐘 Chat" }];
 
     return (
         <div style={{ minHeight: "100vh", background: "var(--ivory)" }}>
             <div style={{ position: "fixed", inset: 0, backgroundImage: GRAIN, pointerEvents: "none", zIndex: 0 }} />
-            {showToast && (
-                <div style={{ position: "fixed", top: 70, left: "50%", transform: "translateX(-50%)", zIndex: 50, padding: "10px 22px", borderRadius: 10, background: "linear-gradient(135deg,var(--red),var(--gold))", color: "white", fontFamily: "Cinzel", fontSize: 10, letterSpacing: "1.5px", boxShadow: "var(--shadow-md)", animation: "slideUp .3s ease", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 8 }}>
-                    ↩ Resumed — {curMeta.label}
-                </div>
-            )}
+            {showToast && <div style={{ position: "fixed", top: 70, left: "50%", transform: "translateX(-50%)", zIndex: 50, padding: "10px 22px", borderRadius: 10, background: "linear-gradient(135deg,var(--red),var(--gold))", color: "white", fontFamily: "Cinzel", fontSize: 10, letterSpacing: "1.5px", boxShadow: "var(--shadow-md)", whiteSpace: "nowrap" }}>↩ Resumed — {curMeta.label}</div>}
+
+            {/* NAV */}
             <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(249,243,232,0.96)", backdropFilter: "blur(16px)", borderBottom: "1px solid var(--border)", padding: "10px 2rem", boxShadow: "var(--shadow-sm)" }}>
                 <div style={{ maxWidth: 1200, margin: "0 auto" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                         <span style={{ fontSize: 18, animation: "float 4s ease-in-out infinite", display: "inline-block" }}>🐘</span>
                         <span style={{ fontFamily: "'Tiro Devanagari Sanskrit',serif", fontSize: 14, letterSpacing: 3, background: "linear-gradient(135deg,var(--brown),var(--gold))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>HATI</span>
                         <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--muted)", marginLeft: 4 }}>Journey of {name}</span>
-                        <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-                            {districts.map((d, i) => <div key={d} title={DM[d]?.label} style={{ width: i === currentIdx ? 18 : 7, height: 7, borderRadius: 4, background: i < currentIdx ? "#22863a" : i === currentIdx ? "var(--gold)" : "var(--border)", transition: "all .3s" }} />)}
+                        <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>{districts.map((d, i) => <div key={d} title={DM[d]?.label} style={{ width: i === currentIdx ? 18 : 7, height: 7, borderRadius: 4, background: i < currentIdx ? "#22863a" : i === currentIdx ? "var(--gold)" : "var(--border)", transition: "all .3s" }} />)}</div>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            {segs.map(s => s.val > 0 && <span key={s.label} style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: "inline-block" }} />{s.label} {fmt(s.val)}</span>)}
                         </div>
+                        <span style={{ fontFamily: "Cinzel", fontSize: 10, color: overBudget ? "var(--red)" : "var(--gold)", flexShrink: 0, marginLeft: 12 }}>{fmt(distTotal)} / {fmt(bdPerD)}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                        <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)" }}>{curMeta.emoji} {curMeta.label} · {dpd}d · 🎭 {fmt(actTotal)}{customTotal > 0 ? ` · 🧾 ${fmt(customTotal)}` : ""}</span>
-                        <span style={{ fontFamily: "Cinzel", fontSize: 10, color: overBudget ? "var(--red)" : "var(--gold)" }}>{fmt(distTotal)} / {fmt(bdPerD)}</span>
-                    </div>
-                    <div style={{ height: 4, borderRadius: 2, background: "var(--ivory-subtle)" }}>
-                        <div style={{ height: "100%", borderRadius: 2, width: `${budgetPct}%`, background: overBudget ? "linear-gradient(90deg,var(--red-soft),var(--red))" : "linear-gradient(90deg,var(--gold),var(--gold-light))", transition: "width .35s ease" }} />
+                    {/* Stacked progress bar */}
+                    <div style={{ height: 5, borderRadius: 3, background: "var(--ivory-subtle)", overflow: "hidden", display: "flex" }}>
+                        {segs.map((s, i) => s.val > 0 && <div key={i} style={{ height: "100%", width: `${pct(s.val)}%`, background: s.color, transition: "width .35s" }} />)}
+                        {overBudget && <div style={{ height: "100%", width: "5%", background: "var(--red)", opacity: 0.5 }} />}
                     </div>
                 </div>
             </div>
-            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 2rem 4rem", display: "grid", gridTemplateColumns: "1fr 340px", gap: "2rem", position: "relative", zIndex: 1 }}>
+
+            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem 2rem 4rem", display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem", position: "relative", zIndex: 1 }}>
                 <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, padding: "16px 20px", borderRadius: 14, background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
                         <span style={{ fontSize: 32 }}>{curMeta.emoji}</span>
@@ -472,38 +716,24 @@ function PlannerScreen({ name, days, budget, districts, currentIdx, setCurrentId
                             <div style={{ fontFamily: "'Tiro Devanagari Sanskrit',serif", fontSize: 22, color: "var(--brown)" }}>{curMeta.label}</div>
                             <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 12, color: "var(--muted)", fontStyle: "italic" }}>{curMeta.tagline} · {curMeta.region} · {curMeta.season}</div>
                         </div>
-                        <div style={{ textAlign: "right" }}>
-                            <div style={{ fontFamily: "Cinzel", fontSize: 13, color: "var(--brown-mid)" }}>{dpd} days</div>
-                            <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)" }}>{curMeta.temp}</div>
-                        </div>
+                        <div style={{ textAlign: "right" }}><div style={{ fontFamily: "Cinzel", fontSize: 13, color: "var(--brown-mid)" }}>{dpd} days</div><div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)" }}>{curMeta.temp}</div></div>
                     </div>
                     <div style={{ display: "flex", borderBottom: "1px solid var(--border)", marginBottom: 16 }}>
-                        {[{ key: "activities", label: "🎭 Planned" }, { key: "misc", label: "✦ Add-Ons" }, { key: "chat", label: "🐘 Chat" }].map(t => (
-                            <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: "10px 18px", border: "none", borderBottom: `2px solid ${tab === t.key ? "var(--gold)" : "transparent"}`, background: "transparent", color: tab === t.key ? "var(--gold)" : "var(--muted)", fontFamily: "Cinzel", fontSize: 9, letterSpacing: "0.8px", textTransform: "uppercase" }}>{t.label}</button>
-                        ))}
+                        {TABS.map(t => <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: "10px 16px", border: "none", borderBottom: `2px solid ${tab === t.key ? "var(--gold)" : "transparent"}`, background: "transparent", color: tab === t.key ? "var(--gold)" : "var(--muted)", fontFamily: "Cinzel", fontSize: 9, letterSpacing: "0.8px", textTransform: "uppercase" }}>{t.label}</button>)}
                     </div>
+
                     {tab === "activities" && (
                         <div>
-                            {overBudget && <div style={{ padding: "10px 13px", borderRadius: 10, background: "rgba(155,35,53,0.05)", border: "1px solid rgba(155,35,53,0.2)", marginBottom: 12, fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--red)" }}>⚠ Over by {fmt(distTotal - bdPerD)}.</div>}
-                            {["morning", "afternoon", "evening"].map(slot => {
-                                const sl = byTime(includedList).filter(a => a.timeSlot === slot && a.district === cur);
-                                if (!sl.length) return null;
-                                return (<div key={slot} style={{ marginBottom: 16 }}>
-                                    <div style={{ fontFamily: "Cinzel", fontSize: 9, letterSpacing: "2px", color: "var(--muted)", marginBottom: 8 }}>{{ morning: "🌅 Morning", afternoon: "☀️ Afternoon", evening: "🌙 Evening" }[slot]}</div>
-                                    {sl.map(a => <ActCard key={a.id} act={a} included={true} onToggle={toggle} canAfford={true} />)}
-                                </div>);
-                            })}
+                            {overBudget && <div style={{ padding: "10px 13px", borderRadius: 10, background: "rgba(155,35,53,0.05)", border: "1px solid rgba(155,35,53,0.2)", marginBottom: 12, fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--red)" }}>⚠ Over budget by {fmt(distTotal - bdPerD)}.</div>}
+                            {["morning", "afternoon", "evening"].map(slot => { const sl = byTime(includedList).filter(a => a.timeSlot === slot && a.district === cur); if (!sl.length) return null; return (<div key={slot} style={{ marginBottom: 16 }}><div style={{ fontFamily: "Cinzel", fontSize: 9, letterSpacing: "2px", color: "var(--muted)", marginBottom: 8 }}>{{ morning: "🌅 Morning", afternoon: "☀️ Afternoon", evening: "🌙 Evening" }[slot]}</div>{sl.map(a => <ActCard key={a.id} act={a} included={true} onToggle={toggle} canAfford={true} />)}</div>); })}
                             {(() => { const ni = ACTIVITIES.filter(a => a.district === cur && !curIncluded.has(a.id)); return ni.length ? <div><div style={{ fontFamily: "Cinzel", fontSize: 9, letterSpacing: "2px", color: "var(--muted)", marginBottom: 8 }}>NOT INCLUDED</div>{ni.map(a => <ActCard key={a.id} act={a} included={false} onToggle={toggle} canAfford={actTotal + a.cost <= bdPerD} />)}</div> : null; })()}
                             <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
-                                <div style={{ fontFamily: "'Tiro Devanagari Sanskrit',serif", fontSize: 15, color: "var(--brown)", marginBottom: 4 }}>Extra Purchases</div>
+                                <div style={{ fontFamily: "'Tiro Devanagari Sanskrit',serif", fontSize: 15, color: "var(--brown)", marginBottom: 4 }}>Other Expenses</div>
                                 <p style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: "var(--muted)", marginBottom: 12, fontStyle: "italic" }}>Souvenirs, meals, rickshaws, tips…</p>
                                 {(customExpenses[cur] || []).map((e, i) => (
                                     <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 10px", borderRadius: 8, background: "var(--ivory-subtle)", marginBottom: 5 }}>
                                         <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 12, color: "var(--brown-mid)" }}>{e.label}</span>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                            <span style={{ fontFamily: "Cinzel", fontSize: 11, color: "var(--gold)" }}>{fmt(e.amount)}</span>
-                                            <button onClick={() => setCustomExpenses(p => ({ ...p, [cur]: (p[cur] || []).filter((_, j) => j !== i) }))} style={{ width: 22, height: 22, borderRadius: 6, border: "1px solid var(--border)", background: "white", color: "var(--muted)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontFamily: "Cinzel", fontSize: 11, color: "var(--gold)" }}>{fmt(e.amount)}</span><button onClick={() => setCustomExpenses(p => ({ ...p, [cur]: (p[cur] || []).filter((_, j) => j !== i) }))} style={{ width: 22, height: 22, borderRadius: 6, border: "1px solid var(--border)", background: "white", color: "var(--muted)", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button></div>
                                     </div>
                                 ))}
                                 <div style={{ display: "flex", gap: 7, marginTop: 8 }}>
@@ -515,46 +745,55 @@ function PlannerScreen({ name, days, budget, districts, currentIdx, setCurrentId
                         </div>
                     )}
                     {tab === "misc" && (<div><div style={{ marginBottom: 12 }}><Bubble from="hati" text={`Flexible add-ons for ${curMeta.label}. Tap ＋ to include.`} /></div>{MISC.map(a => <ActCard key={a.id} act={a} included={curIncluded.has(a.id)} onToggle={toggle} canAfford={true} />)}</div>)}
+                    {tab === "contacts" && <ContactsFinancePanel district={cur} dpd={dpd} stayExpenses={stayExpenses} setStayExpenses={setStayExpenses} guideExpenses={guideExpenses} setGuideExpenses={setGuideExpenses} />}
                     {tab === "chat" && <ChatPane name={name} district={cur} />}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                {/* SIDEBAR */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {/* Budget breakdown */}
                     <div style={{ padding: "16px 18px", borderRadius: 14, background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
-                        <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "2px", color: "var(--muted)", marginBottom: 12 }}>STOP BUDGET</div>
-                        <div style={{ textAlign: "center", marginBottom: 12 }}>
+                        <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "2px", color: "var(--muted)", marginBottom: 12 }}>BUDGET BREAKDOWN</div>
+                        <div style={{ textAlign: "center", marginBottom: 10 }}>
                             <div style={{ fontFamily: "Cinzel", fontSize: 22, color: overBudget ? "var(--red)" : "var(--gold)" }}>{fmt(distTotal)}</div>
                             <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)" }}>of {fmt(bdPerD)} allocated</div>
                         </div>
-                        <div style={{ height: 6, borderRadius: 3, background: "var(--ivory-subtle)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", borderRadius: 3, width: `${budgetPct}%`, background: overBudget ? "var(--red)" : "linear-gradient(90deg,var(--gold),var(--gold-light))", transition: "width .35s" }} />
+                        <div style={{ height: 7, borderRadius: 3, background: "var(--ivory-subtle)", overflow: "hidden", display: "flex", marginBottom: 12 }}>
+                            {segs.map((s, i) => s.val > 0 && <div key={i} style={{ height: "100%", width: `${pct(s.val)}%`, background: s.color, transition: "width .35s" }} />)}
                         </div>
-                        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--muted)" }}>
-                            <span>🎭 {fmt(actTotal)}</span>
-                            {customTotal > 0 && <span>🧾 {fmt(customTotal)}</span>}
-                            <span style={{ color: overBudget ? "var(--red)" : "#22863a" }}>{overBudget ? `+${fmt(distTotal - bdPerD)}` : `-${fmt(bdPerD - distTotal)}`}</span>
+                        {[
+                            { icon: "🎭", label: "Activities", val: actTotal, color: "var(--gold)" },
+                            { icon: "🏨", label: "Hotel", val: stayTotal, color: "var(--blue)", sub: stayExpenses[cur]?.hotelName },
+                            { icon: "🧭", label: "Guide", val: guideCostTotal, color: "var(--purple)", sub: guideExpenses[cur]?.guideName },
+                            { icon: "🧾", label: "Other", val: customTotal, color: "var(--brown-soft)" },
+                        ].map(row => (
+                            <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", borderRadius: 7, background: row.val > 0 ? "var(--ivory-subtle)" : "transparent", marginBottom: 4 }}>
+                                <div><span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, color: row.val > 0 ? row.color : "var(--muted)" }}>{row.icon} {row.label}</span>{row.sub && <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: "var(--muted)", marginTop: 1 }}>{row.sub}</div>}</div>
+                                <span style={{ fontFamily: "Cinzel", fontSize: 11, color: row.val > 0 ? row.color : "var(--muted)" }}>{row.val > 0 ? fmt(row.val) : "—"}</span>
+                            </div>
+                        ))}
+                        <div style={{ borderTop: "1px solid var(--border)", marginTop: 6, paddingTop: 6, display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontFamily: "'Crimson Pro',serif", fontSize: 11, fontWeight: 600, color: "var(--ink)" }}>Remaining</span>
+                            <span style={{ fontFamily: "Cinzel", fontSize: 12, color: overBudget ? "var(--red)" : "var(--green)" }}>{overBudget ? `-${fmt(distTotal - bdPerD)}` : `+${fmt(bdPerD - distTotal)}`}</span>
                         </div>
                     </div>
+
+                    {/* Journey stops */}
                     <div style={{ padding: "16px 18px", borderRadius: 14, background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
                         <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "2px", color: "var(--muted)", marginBottom: 10 }}>YOUR JOURNEY</div>
                         {districts.map((d, i) => {
-                            const m = DM[d]; const done = i < currentIdx; const active = i === currentIdx;
-                            return (<div key={d} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: i < districts.length - 1 ? "1px solid var(--border-soft)" : "none" }}>
+                            const m = DM[d]; const done = i < currentIdx; const active = i === currentIdx; return (<div key={d} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: i < districts.length - 1 ? "1px solid var(--border-soft)" : "none" }}>
                                 <div style={{ width: 24, height: 24, borderRadius: "50%", background: done ? "#22863a" : active ? "var(--gold)" : "var(--ivory-subtle)", border: `1.5px solid ${done ? "#22863a" : active ? "var(--gold)" : "var(--border)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: done || active ? "white" : "var(--muted)", flexShrink: 0 }}>{done ? "✓" : i + 1}</div>
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 12, fontWeight: active ? 600 : 400, color: active ? "var(--ink)" : done ? "var(--brown-soft)" : "var(--muted)" }}>{m.label}</div>
-                                    <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: "var(--muted)" }}>{dpd} days</div>
-                                </div>
+                                <div style={{ flex: 1 }}><div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 12, fontWeight: active ? 600 : 400, color: active ? "var(--ink)" : done ? "var(--brown-soft)" : "var(--muted)" }}>{m.label}</div><div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: "var(--muted)" }}>{dpd} days</div></div>
                                 <span style={{ fontSize: 14 }}>{m.emoji}</span>
                             </div>);
                         })}
                     </div>
+
+                    {/* Complete */}
                     <div style={{ padding: "16px 18px", borderRadius: 14, background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)" }}>
-                        <div style={{ fontFamily: "'Tiro Devanagari Sanskrit',serif", fontSize: 15, color: "var(--brown)", marginBottom: 5 }}>Ready to move on?</div>
-                        {currentIdx < districts.length - 1 && (
-                            <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--ivory-subtle)", marginBottom: 12, fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--brown-mid)" }}>
-                                {distTotal <= bdPerD ? <span style={{ color: "#22863a" }}>✓ {fmt(bdPerD - distTotal)} saved</span> : <span style={{ color: "var(--red)" }}>⚠ {fmt(distTotal - bdPerD)} over</span>}
-                                <span style={{ color: "var(--muted)" }}> — rolls to next stop</span>
-                            </div>
-                        )}
+                        <div style={{ fontFamily: "'Tiro Devanagari Sanskrit',serif", fontSize: 15, color: "var(--brown)", marginBottom: 8 }}>Ready to move on?</div>
+                        {currentIdx < districts.length - 1 && <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--ivory-subtle)", marginBottom: 12, fontFamily: "'Crimson Pro',serif", fontSize: 10, color: "var(--brown-mid)" }}>{distTotal <= bdPerD ? <span style={{ color: "var(--green)" }}>✓ {fmt(bdPerD - distTotal)} saved</span> : <span style={{ color: "var(--red)" }}>⚠ {fmt(distTotal - bdPerD)} over</span>}<span style={{ color: "var(--muted)" }}> — rolls to next stop</span></div>}
                         <button onClick={completeDistrict} style={{ width: "100%", padding: "12px", borderRadius: 10, background: "linear-gradient(135deg,#1a6b3a,#22c55e)", color: "white", fontFamily: "Cinzel", fontSize: 10, letterSpacing: "1.5px", border: "none", boxShadow: "0 2px 12px rgba(34,197,94,0.2)", cursor: "pointer" }}>
                             ✓ {currentIdx < districts.length - 1 ? "COMPLETE & NEXT STOP" : "COMPLETE MY JOURNEY"}
                         </button>
@@ -565,7 +804,7 @@ function PlannerScreen({ name, days, budget, districts, currentIdx, setCurrentId
     );
 }
 
-// ─── REVIEW SCREEN ────────────────────────────────────────────────────────────
+// ─── REVIEW ───────────────────────────────────────────────────────────────────
 function ReviewScreen({ name, budget, spentHistory, completed, onRestart }) {
     const grandTotal = spentHistory.reduce((s, h) => s + h.total, 0);
     const savings = budget - grandTotal;
@@ -581,9 +820,9 @@ function ReviewScreen({ name, budget, spentHistory, completed, onRestart }) {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1.5rem" }}>
                     <div style={{ padding: "22px 24px", borderRadius: 16, background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)" }}>
                         <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "2px", color: "var(--muted)", marginBottom: 14 }}>TRIP SUMMARY</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", textAlign: "center", gap: 12, marginBottom: 16 }}>
-                            {[{ v: fmt(grandTotal), l: "spent" }, { v: fmt(Math.abs(savings)), l: savings >= 0 ? "saved" : "over" }, { v: completed.length, l: "stops" }].map(({ v, l }, i) => (
-                                <div key={l}><div style={{ fontFamily: "Cinzel", fontSize: 17, color: i === 1 && savings < 0 ? "var(--red)" : "var(--gold)" }}>{v}</div><div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: "var(--muted)" }}>{l}</div></div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", textAlign: "center", gap: 12 }}>
+                            {[{ v: fmt(grandTotal), l: "total spent" }, { v: fmt(Math.abs(savings)), l: savings >= 0 ? "saved" : "over" }, { v: completed.length, l: "stops" }].map(({ v, l }, i) => (
+                                <div key={l}><div style={{ fontFamily: "Cinzel", fontSize: 15, color: i === 1 && savings < 0 ? "var(--red)" : "var(--gold)" }}>{v}</div><div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: "var(--muted)" }}>{l}</div></div>
                             ))}
                         </div>
                     </div>
@@ -593,17 +832,26 @@ function ReviewScreen({ name, budget, spentHistory, completed, onRestart }) {
                 </div>
                 <div style={{ padding: "22px 24px", borderRadius: 16, background: "white", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)", marginBottom: "1.5rem" }}>
                     <div style={{ fontFamily: "Cinzel", fontSize: 8, letterSpacing: "2px", color: "var(--muted)", marginBottom: 14 }}>YOUR NEPAL STORY</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12 }}>
                         {completed.map((d, i) => {
                             const meta = DM[d]; const h = spentHistory[i]; const diff = h ? h.total - h.allowance : 0;
-                            return (<div key={d} style={{ padding: "12px 14px", borderRadius: 10, background: "var(--ivory-deep)", border: "1px solid var(--border-soft)" }}>
+                            const hsegs = [{ v: h?.actTotal || 0, c: "var(--gold)" }, { v: h?.stayTotal || 0, c: "var(--blue)" }, { v: h?.guideCostTotal || 0, c: "var(--purple)" }, { v: h?.customTotal || 0, c: "var(--brown-soft)" }];
+                            return (<div key={d} style={{ padding: "14px", borderRadius: 10, background: "var(--ivory-deep)", border: "1px solid var(--border-soft)" }}>
                                 <div style={{ fontSize: 22, marginBottom: 5 }}>{meta.emoji}</div>
-                                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 13, fontWeight: 600, color: "var(--ink)", marginBottom: 2 }}>{meta.label}</div>
-                                {h && (<><div style={{ fontFamily: "Cinzel", fontSize: 11, color: "var(--gold)", marginBottom: 4 }}>{fmt(h.total)}</div>
-                                    <div style={{ height: 3, borderRadius: 2, background: "var(--ivory-subtle)", overflow: "hidden", marginBottom: 4 }}>
-                                        <div style={{ height: "100%", borderRadius: 2, width: `${Math.min(100, h.total / h.allowance * 100)}%`, background: diff > 0 ? "var(--red)" : "var(--gold)" }} />
+                                <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 13, fontWeight: 600, color: "var(--ink)", marginBottom: 6 }}>{meta.label}</div>
+                                {h && (<>
+                                    <div style={{ height: 5, borderRadius: 3, background: "var(--ivory-subtle)", overflow: "hidden", display: "flex", marginBottom: 6 }}>
+                                        {hsegs.map((s, si) => s.v > 0 && <div key={si} style={{ height: "100%", width: `${Math.min(100, (s.v / h.allowance) * 100)}%`, background: s.c }} />)}
                                     </div>
-                                    <div style={{ fontFamily: "'Crimson Pro',serif", fontSize: 9, color: diff > 0 ? "var(--red)" : "#22863a" }}>{diff > 0 ? `+${fmt(diff)} over` : `${fmt(-diff)} saved`}</div>
+                                    {[{ icon: "🎭", label: "Activities", val: h.actTotal || 0, color: "var(--gold)" }, { icon: "🏨", label: h.hotelName || "Hotel", val: h.stayTotal || 0, color: "var(--blue)" }, { icon: "🧭", label: h.guideName || "Guide", val: h.guideCostTotal || 0, color: "var(--purple)" }, { icon: "🧾", label: "Other", val: h.customTotal || 0, color: "var(--brown-soft)" }].filter(r => r.val > 0).map(r => (
+                                        <div key={r.label} style={{ display: "flex", justifyContent: "space-between", fontFamily: "'Crimson Pro',serif", fontSize: 10, marginBottom: 3 }}>
+                                            <span style={{ color: "var(--muted)" }}>{r.icon} {r.label}</span><span style={{ color: r.color, fontWeight: 600 }}>{fmt(r.val)}</span>
+                                        </div>
+                                    ))}
+                                    <div style={{ borderTop: "1px solid var(--border-soft)", marginTop: 5, paddingTop: 5, display: "flex", justifyContent: "space-between" }}>
+                                        <span style={{ fontFamily: "Cinzel", fontSize: 10, color: "var(--ink)" }}>TOTAL</span>
+                                        <span style={{ fontFamily: "Cinzel", fontSize: 11, color: diff > 0 ? "var(--red)" : "var(--green)" }}>{fmt(h.total)} {diff > 0 ? "↑" : "✓"}</span>
+                                    </div>
                                 </>)}
                             </div>);
                         })}
@@ -615,52 +863,32 @@ function ReviewScreen({ name, budget, spentHistory, completed, onRestart }) {
     );
 }
 
-// ─── ROOT — ALL STATE LIVES HERE, NEVER IN CHILDREN ──────────────────────────
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
-    // ── Initialise from localStorage synchronously so there's zero flicker ──
     const saved = hydrate();
-
     const [screen, setScreen] = useState(saved?.screen || "intro");
     const [name, setName] = useState(saved?.name || "");
     const [journeyConfig, setJourneyConfig] = useState(saved?.journeyConfig || null);
     const [reviewData, setReviewData] = useState(saved?.reviewData || null);
     const [justResumed, setJustResumed] = useState(!!saved && saved.screen !== "intro");
-
-    // Planner sub-state — all lifted here so navigation never destroys it
     const [currentIdx, setCurrentIdx] = useState(saved?.currentIdx ?? 0);
     const [completed, setCompleted] = useState(saved?.completed ?? []);
     const [spentHistory, setSpentHistory] = useState(saved?.spentHistory ?? []);
     const [included, setIncluded] = useState(saved?.included ?? {});
     const [customExpenses, setCustomExpenses] = useState(saved?.customExpenses ?? {});
+    const [stayExpenses, setStayExpenses] = useState(saved?.stayExpenses ?? {});
+    const [guideExpenses, setGuideExpenses] = useState(saved?.guideExpenses ?? {});
 
-    // Persist every time anything changes
     useEffect(() => {
         if (screen === "intro") { wipe(); return; }
-        persist({ screen, name, journeyConfig, reviewData, currentIdx, completed, spentHistory, included, customExpenses });
-    }, [screen, name, journeyConfig, reviewData, currentIdx, completed, spentHistory, included, customExpenses]);
-
-    // Clear justResumed flag after first render
+        persist({ screen, name, journeyConfig, reviewData, currentIdx, completed, spentHistory, included, customExpenses, stayExpenses, guideExpenses });
+    }, [screen, name, journeyConfig, reviewData, currentIdx, completed, spentHistory, included, customExpenses, stayExpenses, guideExpenses]);
     useEffect(() => { if (justResumed) setTimeout(() => setJustResumed(false), 4000); }, []);
 
     function startJourney(n) { setName(n); setScreen("setup"); }
-
-    function lockJourney(config) {
-        setJourneyConfig(config);
-        // Reset planner state for fresh journey
-        setCurrentIdx(0); setCompleted([]); setSpentHistory([]); setIncluded({}); setCustomExpenses({});
-        setScreen("planner");
-    }
-
-    function finishJourney(hist, comp) {
-        setReviewData({ history: hist, completed: comp });
-        setScreen("review");
-    }
-
-    function restart() {
-        wipe();
-        setScreen("intro"); setName(""); setJourneyConfig(null); setReviewData(null);
-        setCurrentIdx(0); setCompleted([]); setSpentHistory([]); setIncluded({}); setCustomExpenses({});
-    }
+    function lockJourney(config) { setJourneyConfig(config); setCurrentIdx(0); setCompleted([]); setSpentHistory([]); setIncluded({}); setCustomExpenses({}); setStayExpenses({}); setGuideExpenses({}); setScreen("planner"); }
+    function finishJourney(hist, comp) { setReviewData({ history: hist, completed: comp }); setScreen("review"); }
+    function restart() { wipe(); setScreen("intro"); setName(""); setJourneyConfig(null); setReviewData(null); setCurrentIdx(0); setCompleted([]); setSpentHistory([]); setIncluded({}); setCustomExpenses({}); setStayExpenses({}); setGuideExpenses({}); }
 
     if (screen === "intro") return <IntroChatScreen onStart={startJourney} />;
     if (screen === "setup") return <SetupScreen name={name} onDone={lockJourney} />;
@@ -672,8 +900,9 @@ export default function App() {
             spentHistory={spentHistory} setSpentHistory={setSpentHistory}
             included={included} setIncluded={setIncluded}
             customExpenses={customExpenses} setCustomExpenses={setCustomExpenses}
-            onReview={finishJourney}
-            justResumed={justResumed}
+            stayExpenses={stayExpenses} setStayExpenses={setStayExpenses}
+            guideExpenses={guideExpenses} setGuideExpenses={setGuideExpenses}
+            onReview={finishJourney} justResumed={justResumed}
         />
     );
     if (screen === "review" && reviewData) return (
