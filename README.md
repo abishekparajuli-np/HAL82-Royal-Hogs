@@ -1,5 +1,4 @@
 # HAL82-Royal-Hogs
-# HAL82-Royal-Hogs
 ## Team Mates
 - Abishek Parajuli
 - Nirjal Paudel
